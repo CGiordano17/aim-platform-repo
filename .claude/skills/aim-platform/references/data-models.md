@@ -54,8 +54,11 @@ prototype only — never carry this forward into the real backend.
 { id, title,                 // business-impact name, e.g. "Efficiency Gains"
   category: 'productivity'|'quality'|'revenue'|'capability',
   tier: 0|1|2|3,
+  maturity: 'literate'|'applied'|'operational'|'transformational', // GA stage — distinct axis from tier
   statement: { action, resources, outcome },  // the three sentence fragments
   measurementSource: 'nudge'|'manual'|'vendor_api'|'system_api',
+  measures?: string,           // the underlying question/signal this goal tracks
+  sourceDetail?: string,       // how the measurement is actually captured
   currentValue, targetValue?, unit?,
   linkedWorkflowIds: string[], linkedNudgeIds: string[],
   vendorSources?: [{ name, notes }],          // for tiers 2-3
@@ -63,6 +66,8 @@ prototype only — never carry this forward into the real backend.
   roiExample?: string,
   lastUpdated, updatedBy }
 ```
+Implemented in `app/App.jsx` (build phase 2), seeded with the client's real
+19-goal ROI grid transcribed from `design/active/roi-ladder.html`.
 
 ### Nudge — *not yet built*
 ```

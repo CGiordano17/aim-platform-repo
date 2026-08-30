@@ -35,9 +35,14 @@ step assumes the previous ones are done, and several steps are cheap
 specifically *because* an earlier step already got the data flowing.
 
 1. ✅ Consolidate the PRD spec.
-2. Add **Transformation Goals** as a real data model in the current
+2. ✅ Add **Transformation Goals** as a real data model in the current
    prototype (still `window.storage`), editable `currentValue` by hand for
-   every tier — makes the ROI ladder live instead of static.
+   every tier — makes the ROI ladder live instead of static. Done: `app/App.jsx`
+   now has the full 19-goal ROI grid (real client content from
+   `design/active/roi-ladder.html`), a dark-HUD-styled Goals tab
+   (`TransformationGoals` component), and hand-editable `currentValue` per
+   card. Not yet buildable/testable here — no project scaffold exists until
+   phase 5, so this hasn't been run in a browser, only syntax-validated.
 3. Build **Nudges** tab; wire Tier 0 goals to real Nudge response data and
    existing Readiness scores (no new infra needed — data already flows
    through the app).

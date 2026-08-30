@@ -147,6 +147,10 @@ const TAB_PERMS = {
   builder: ["superadmin", "hradmin", "manager"],
   reports: ["superadmin", "hradmin", "manager", "viewer"],
   nudges: ["superadmin", "hradmin"],
+  // "All roles" per PRD §3 nav table. Edit-rights-within-the-tab is an open
+  // decision (PRD §7) — not resolved here; every role that can view can
+  // currently also edit currentValue, same as other "All roles" tabs today.
+  goals: ["superadmin", "hradmin", "manager", "viewer"],
   teams: ["superadmin", "hradmin"],
   config: ["superadmin"],
 };
@@ -1541,6 +1545,563 @@ const PlaceholderSection = ({ title, sub }) => (
   </div>
 );
 
+// ─── TRANSFORMATION GOALS ───────────────────────────────────────────────────────
+// PRD §2.4 / §4 (build phase 2 of §6.3): the ROI Measurability Ladder as a real,
+// window.storage-backed data model. Deliberately uses the dark HUD tokens from
+// PRD §5 directly (matching design/active/roi-ladder.html) rather than the light
+// `T` tokens the rest of this prototype still uses — §5 is the decided design
+// system going forward; re-theming the older tabs to match is a separate cleanup
+// pass, not part of this build step.
+const HUD = {
+  bg: "#07090B",
+  panel: "rgba(16,21,26,0.75)",
+  panelAlt: "#0a1116",
+  line: "rgba(94,230,255,0.12)",
+  text: "#EAF6F8",
+  sub: "#9FB6BC",
+  muted: "#6E8790",
+  cyan: "#5EE6FF",
+  amber: "#F0A94E",
+  green: "#7FE0A0",
+  violet: "#C79EF0",
+  rose: "#F08FB0",
+};
+
+const GOALS_KEY = "aim-goals-v1";
+
+// PRD §4 lists category/tier/statement/measurementSource but not `maturity`,
+// even though §2.4 requires every Goal card to show "Tier + GA maturity tags...
+// two different axes." Treating that as a data-model gap, not an omission to
+// respect — `maturity` is added here and should be added to PRD §4 to match
+// (see references/data-models.md in the aim-platform skill).
+const GOAL_CATEGORY_META = {
+  productivity: { name: "Productivity & Efficiency", owner: "COO · CHRO · Operations", color: HUD.cyan },
+  quality: { name: "Quality & Risk", owner: "Functional leads · GC · CISO", color: HUD.violet },
+  revenue: { name: "Revenue & Impact", owner: "CEO · CRO · CCO", color: HUD.amber },
+  capability: { name: "Workforce Capability", owner: "CLO · CHRO", color: HUD.rose },
+};
+
+const GOAL_TIER_META = [
+  { name: "Self-reported", sub: "Nudge / Assessment", color: HUD.amber },
+  { name: "Manual tagging", sub: "Human flags it / expert review", color: HUD.sub },
+  { name: "Native vendor reporting", sub: "Admin console you already have", color: HUD.cyan },
+  { name: "Deep system integration", sub: "API telemetry / cross-system model", color: HUD.violet },
+];
+
+const GOAL_MATURITY_META = {
+  literate: "Literate",
+  applied: "Applied",
+  operational: "Operational",
+  transformational: "Transformational",
+};
+
+// Seed content is the client's real ROI grid, transcribed from
+// design/active/roi-ladder.html — not placeholder data. Per the honesty note in
+// PRD §2.4, only the four Tier-0 cards are genuinely self-report; nothing here
+// is force-fit into a tier to pad the ladder. `currentValue` seeds as null on
+// every card — the `roiExample` strings are illustrative case-study language
+// from the client's own deck, not this org's live numbers, so making up a
+// starting currentValue would misrepresent them as real. Phase 2's job is to
+// make currentValue *editable* by hand, not to pre-fill it with fiction.
+const TRANSFORMATION_GOALS_SEED = [
+  {
+    id: "goal-adoption-pulse", title: "Adoption Pulse", category: "productivity", tier: 0, maturity: "literate",
+    statement: { action: "drive early adoption of its highest-value AI-augmented workflows", resources: "use and self-report on them weekly", outcome: "a leading signal before deeper tracking is in place" },
+    measurementSource: "nudge", measures: "Have you used an AI-augmented workflow this week?",
+    sourceDetail: "Direct Nudge sent after workflow completion or on a weekly cadence — the fastest signal to stand up, lowest confidence alone",
+    currentValue: null, targetValue: null, unit: null, linkedWorkflowIds: [], linkedNudgeIds: [],
+    vendorSources: [{ name: "Nudges", notes: "In-app micro-prompt tied to a specific Workflow. Response rate and yes/no ratio feed straight into that workflow's usage % on the Workflows board." }],
+    implementationSteps: [
+      { title: "Pick the workflow to Nudge on", detail: "Tie it to a specific banked or piloting workflow, not a vague 'are you using AI' question." },
+      { title: "Set a cadence", detail: "Weekly for high-frequency workflows, per-completion for rarer ones." },
+      { title: "Treat it as directional, not proof", detail: "Self-report inflates usage — use it to prioritize what to instrument next, not as the final ROI number." },
+      { title: "Compare against system data once available", detail: "When native or system-integration data comes online for the same workflow, reconcile the gap." },
+    ],
+    roiExample: "Within 2 weeks of turning on weekly Nudges, self-reported usage of the sales proposal workflow hit 61% — enough signal to justify instrumenting it properly.",
+    lastUpdated: null, updatedBy: null,
+  },
+  {
+    id: "goal-trust-signal", title: "Trust Signal", category: "quality", tier: 0, maturity: "literate",
+    statement: { action: "build confidence in AI-assisted work", resources: "report their comfort using AI output without double-checking it", outcome: "early visibility into trust gaps before they become quality issues" },
+    measurementSource: "nudge", measures: "Do you trust the AI output enough to use it without double-checking?",
+    sourceDetail: "Direct Nudge measuring perceived trust — the individual-level companion to the Trust dimension in Readiness",
+    currentValue: null, targetValue: null, unit: null, linkedWorkflowIds: [], linkedNudgeIds: [],
+    vendorSources: [{ name: "Nudges", notes: "Short single-question prompt after an AI-assisted task. Rolls up into the same Trust score tracked in Readiness." }],
+    implementationSteps: [
+      { title: "Ask right after task completion", detail: "Trust in the moment is more honest than trust recalled later." },
+      { title: "Segment by department", detail: "Trust varies sharply by function — don't average it away." },
+      { title: "Pair with the accuracy monitoring rung above", detail: "Low self-reported trust plus low measured accuracy is a real problem; low trust with high accuracy is a change-management problem." },
+    ],
+    roiExample: "Trust nudges showed only 34% of the finance team would use AI output unchecked — flagged before it became a compliance incident.",
+    lastUpdated: null, updatedBy: null,
+  },
+  {
+    id: "goal-deal-momentum-signal", title: "Deal Momentum Signal", category: "revenue", tier: 0, maturity: "literate",
+    statement: { action: "surface early revenue impact from AI-assisted selling", resources: "report when AI helped move a deal or interaction forward", outcome: "a leading indicator ahead of full CRM instrumentation" },
+    measurementSource: "nudge", measures: "Did AI help you move this deal or interaction forward faster?",
+    sourceDetail: "Direct Nudge to reps or support agents right after a customer interaction",
+    currentValue: null, targetValue: null, unit: null, linkedWorkflowIds: [], linkedNudgeIds: [],
+    vendorSources: [{ name: "Nudges", notes: "Post-interaction micro-prompt, optionally paired with a follow-up on what specifically helped." }],
+    implementationSteps: [
+      { title: "Trigger right after deal stage changes or ticket closes", detail: "Immediate recall beats end-of-week recall." },
+      { title: "Keep it to one tap", detail: "Yes/no plus an optional one-line comment — anything longer kills response rate." },
+      { title: "Use as a leading indicator only", detail: "Confirm with CRM-native deal velocity data once volume is high enough." },
+    ],
+    roiExample: "73% of reps who got the nudge said AI shortened at least one step in their last deal — early signal ahead of full CRM instrumentation.",
+    lastUpdated: null, updatedBy: null,
+  },
+  {
+    id: "goal-readiness-baseline", title: "Readiness Baseline", category: "capability", tier: 0, maturity: "literate",
+    statement: { action: "target training investment where it matters most", resources: "complete a baseline diagnostic of trust, skill, and willingness before training begins", outcome: "efficient allocation of enablement resources" },
+    measurementSource: "nudge", measures: "How prepared is the workforce before training begins",
+    sourceDetail: "Baseline diagnostic measuring trust in AI, current skill level, and openness to change — before training investment begins",
+    currentValue: null, targetValue: null, unit: null, linkedWorkflowIds: [], linkedNudgeIds: [],
+    vendorSources: [
+      { name: "Workday", notes: "Import structured assessment scores into learner profiles, track readiness segmentation." },
+      { name: "Cornerstone", notes: "Benchmark readiness scores against org-wide averages, track pathway assignment." },
+      { name: "Any stack", notes: "A validated diagnostic covering trust, preparedness, willingness — deploy before training begins." },
+    ],
+    implementationSteps: [
+      { title: "Run the assessment before any training — no exceptions", detail: "Assessing after training loses the ability to measure movement." },
+      { title: "Measure trust, preparedness, and willingness", detail: "All three predict adoption outcomes independently." },
+      { title: "Segment people into cohorts based on results", detail: "Foundational, Proficiency, Advanced." },
+      { title: "Map results across the org", detail: "Which functions are furthest behind, which are already ahead." },
+      { title: "Re-run at 60 and 90 days post-training", detail: "The delta becomes the ROI instrument." },
+    ],
+    roiExample: "Before spending on training, assessment data showed 43% of employees needed foundational skills — budget went where it moved the needle.",
+    lastUpdated: null, updatedBy: null,
+  },
+  {
+    id: "goal-cycle-time-reduction", title: "Cycle Time Reduction", category: "productivity", tier: 1, maturity: "operational",
+    statement: { action: "cut end-to-end process time on AI-assisted work", resources: "flag every AI-assisted ticket in existing systems", outcome: "faster throughput without adding headcount" },
+    measurementSource: "manual", measures: "Does AI actually change how work gets done",
+    sourceDetail: "End-to-end process time for AI-assisted vs. non-AI tasks in project and ticketing tools",
+    currentValue: null, targetValue: null, unit: null, linkedWorkflowIds: [], linkedNudgeIds: [],
+    vendorSources: [
+      { name: "Jira", notes: "Add a custom field 'AI used: yes/no' on each ticket. Pull cycle time report segmented by that field." },
+      { name: "ServiceNow", notes: "Now Intelligence dashboard — AI Assist tracking is native." },
+      { name: "Zendesk", notes: "Explore Analytics > AI tab — handle time, resolution rate, deflection rate." },
+    ],
+    implementationSteps: [
+      { title: "Add one checkbox to the existing task system", detail: "'AI used: yes/no' — a dropdown creates friction that kills compliance." },
+      { title: "Define start and end for each workflow", detail: "Ticket created → resolved. Pick one definition per workflow type." },
+      { title: "Wait 8 weeks before drawing conclusions", detail: "Run the comparison within the same team — AI-using vs. non-AI members." },
+      { title: "Build one dashboard showing the split", detail: "Median cycle time, first-pass quality, volume — divided by AI flag." },
+      { title: "Frame the story as throughput, not just speed", detail: "Same team, same workload, faster output — translate to cost." },
+    ],
+    roiExample: "Tasks flagged as AI-assisted closed 56% faster than non-AI tasks — the equivalent of 1.4 additional people without adding a single hire.",
+    lastUpdated: null, updatedBy: null,
+  },
+  {
+    id: "goal-accuracy-assurance", title: "Accuracy Assurance", category: "quality", tier: 1, maturity: "operational",
+    statement: { action: "keep AI-generated content factually reliable", resources: "review a sample of outputs against verified sources", outcome: "a lower error rate in production" },
+    measurementSource: "manual", measures: "How accurate are AI outputs going into production",
+    sourceDetail: "Factual error rate in AI-generated content, tracked against verified internal sources",
+    currentValue: null, targetValue: null, unit: null, linkedWorkflowIds: [], linkedNudgeIds: [],
+    vendorSources: [
+      { name: "Microsoft 365", notes: "Copilot citations log source references — spot-check against SharePoint knowledge base." },
+      { name: "Any LLM platform", notes: "Sample 10% of outputs weekly, log error type per output." },
+      { name: "Any stack", notes: "Patronus AI, Galileo, or LangSmith for automated accuracy monitoring at API layer — this rung moves up to Tier 3 once automated." },
+    ],
+    implementationSteps: [
+      { title: "Match the verification source to content type", detail: "Policy → knowledge base, technical → specs, compliance → regulatory databases." },
+      { title: "Review a random 10% of AI outputs weekly", detail: "Log error type, content category, reviewer, date." },
+      { title: "Decide review approach based on volume", detail: "Manual spot-check, retrieval-augmented, or automated eval tools." },
+      { title: "Track error rate week over week", detail: "Watch for spikes tied to model version changes." },
+      { title: "Report as both quality improvement and risk reduction", detail: "Pre vs. post rate × cost to catch an error × annual volume = savings." },
+    ],
+    roiExample: "After putting a simple accuracy review process in place, published errors dropped 73% — saving an estimated $65K annually.",
+    lastUpdated: null, updatedBy: null,
+  },
+  {
+    id: "goal-quality-control", title: "Quality Control", category: "quality", tier: 1, maturity: "operational",
+    statement: { action: "maintain or raise the quality bar on AI-assisted work", resources: "submit outputs to blind expert review", outcome: "a defensible, unbiased quality comparison against non-AI work" },
+    measurementSource: "manual", measures: "Has output quality improved since AI deployment",
+    sourceDetail: "Side-by-side scoring of AI-assisted vs. non-AI work by reviewers who do not know which is which",
+    currentValue: null, targetValue: null, unit: null, linkedWorkflowIds: [], linkedNudgeIds: [],
+    vendorSources: [
+      { name: "Any stack", notes: "Design a rubric, pull a random sample, blind reviewers to AI origin — the methodology is what makes this credible." },
+      { name: "Microsoft 365", notes: "SharePoint version history — revision round count as a quality proxy." },
+    ],
+    implementationSteps: [
+      { title: "Build a simple scoring rubric — 4 to 6 dimensions", detail: "Accuracy, clarity, completeness, compliance, time to produce." },
+      { title: "Pull a random sample of 20-30 outputs per team per quarter", detail: "Blind reviewers to AI involvement — random selection prevents cherry-picking." },
+      { title: "Calibrate reviewers before they score anything", detail: "Independently score sample outputs, compare, and align." },
+      { title: "Compare AI-assisted outputs to the non-AI baseline", detail: "Dimensions scoring lower are training gaps, not reasons to pause." },
+      { title: "Combine quality score with time-to-produce", detail: "Quality ÷ hours invested captures both simultaneously." },
+    ],
+    roiExample: "Blind reviewers scored AI-assisted proposals 18% higher on clarity and completeness — quality up while costs came down.",
+    lastUpdated: null, updatedBy: null,
+  },
+  {
+    id: "goal-skill-growth", title: "Skill Growth", category: "capability", tier: 1, maturity: "applied",
+    statement: { action: "build durable AI skill across the workforce", resources: "complete role-based training and demonstrate improvement on real tasks", outcome: "a measurable increase in applied skill 60 days out" },
+    measurementSource: "manual", measures: "Do skill scores improve measurably after training",
+    sourceDetail: "Skill scores before training and again 60 days later — using real tasks, not multiple choice",
+    currentValue: null, targetValue: null, unit: null, linkedWorkflowIds: [], linkedNudgeIds: [],
+    vendorSources: [
+      { name: "Workday", notes: "Import pre/post assessment scores, track uplift per learner." },
+      { name: "Degreed", notes: "Skill proficiency tracking natively, connected to training pathway completion." },
+      { name: "Any stack", notes: "Real task scenarios scored against a rubric by calibrated reviewers." },
+    ],
+    implementationSteps: [
+      { title: "Use real tasks, not multiple choice", detail: "Assessors score observable output against a rubric — eliminates self-report bias." },
+      { title: "Calibrate scorers before they evaluate anything", detail: "Independently score the same sample, compare and align." },
+      { title: "Wait 60 days before the post-assessment", detail: "Immediate scores overestimate retention." },
+      { title: "Connect skill scores to something the CEO measures", detail: "Platform usage, cycle time, or output quality." },
+      { title: "Set a minimum improvement target in the training contract", detail: "Makes measurement a shared accountability." },
+    ],
+    roiExample: "60 days after training, average skill score improved from 4.8 to 7.8 out of 10 — verified through practical tasks, not a satisfaction survey.",
+    lastUpdated: null, updatedBy: null,
+  },
+  {
+    id: "goal-peer-knowledge-transfer", title: "Peer Knowledge Transfer", category: "capability", tier: 1, maturity: "applied",
+    statement: { action: "spread AI fluency organically", resources: "share and reuse each other's prompts and workflows", outcome: "faster skill diffusion without additional formal training" },
+    measurementSource: "manual", measures: "Are people building on each other's AI work",
+    sourceDetail: "How often shared prompts and AI resources get reused — a signal that skills are spreading across the org",
+    currentValue: null, targetValue: null, unit: null, linkedWorkflowIds: [], linkedNudgeIds: [],
+    vendorSources: [
+      { name: "Microsoft 365", notes: "SharePoint or Teams wiki with usage tracking — Power BI dashboard on top." },
+      { name: "Any stack", notes: "Notion, Confluence, or any knowledge base — needs a logged reuse count per prompt." },
+    ],
+    implementationSteps: [
+      { title: "Build a library that counts reuse, not just stores prompts", detail: "Without a reuse counter, it's a resource, not a measurement." },
+      { title: "Ask authors to estimate ROI at submission", detail: "Task type, time saved per use, which roles benefit." },
+      { title: "Report the top 10 prompts by time saved each month", detail: "Total time recovered, reuse velocity, new submissions." },
+      { title: "Feed the highest-performing prompts back into training", detail: "Belong in onboarding and role-based training." },
+      { title: "Report as shared infrastructure ROI", detail: "One prompt reused 2,200 times beats 100 used once each." },
+    ],
+    roiExample: "A shared prompt library got used over 2,200 times in one quarter — an estimated $176K in recovered time.",
+    lastUpdated: null, updatedBy: null,
+  },
+  {
+    id: "goal-efficiency-gains", title: "Efficiency Gains", category: "productivity", tier: 2, maturity: "applied",
+    statement: { action: "reduce time spent on high-frequency recurring tasks", resources: "adopt AI tools for their most common weekly work", outcome: "measurable time savings convertible to FTE capacity" },
+    measurementSource: "vendor_api", measures: "How much time is saved per task, per role",
+    sourceDetail: "Average task completion time before and after AI deployment, measured by role and task type",
+    currentValue: null, targetValue: null, unit: null, linkedWorkflowIds: [], linkedNudgeIds: [],
+    vendorSources: [
+      { name: "Microsoft 365", notes: "Viva Insights > Copilot Dashboard. Estimated hours saved per user per week by app." },
+      { name: "Google Workspace", notes: "Admin Console > Reports > Gemini usage. Time-in-docs and meeting summary metrics." },
+    ],
+    implementationSteps: [
+      { title: "Pick 3–5 high-frequency tasks", detail: "Weekly tasks, not edge cases — cleaner before/after signal." },
+      { title: "Pull the native dashboard estimate", detail: "Viva or Gemini usage reports give this without extra instrumentation." },
+      { title: "Cross-validate against a manual log sample", detail: "Native estimates are directional — validate before presenting to Finance." },
+      { title: "Convert to headcount equivalent", detail: "Total hours saved ÷ 2,080 = FTE equivalent for the executive audience." },
+    ],
+    roiExample: "A team went from spending 4 hours on a standard report to under 2 — across 40 people, that is $180K in time recovered annually.",
+    lastUpdated: null, updatedBy: null,
+  },
+  {
+    id: "goal-time-reclaimed", title: "Time Reclaimed", category: "productivity", tier: 2, maturity: "operational",
+    statement: { action: "eliminate unnecessary recurring status meetings", resources: "adopt AI meeting summaries and async updates", outcome: "more uninterrupted focus time org-wide" },
+    measurementSource: "vendor_api", measures: "How many recurring meetings disappeared",
+    sourceDetail: "Reduction in status meeting hours after async AI summarization tools were deployed",
+    currentValue: null, targetValue: null, unit: null, linkedWorkflowIds: [], linkedNudgeIds: [],
+    vendorSources: [
+      { name: "Microsoft 365", notes: "Viva Insights > Collaboration habits — total meeting hours, % recurring, meeting size." },
+      { name: "Google Workspace", notes: "Admin Console > Reports > Meet — frequency and duration trends." },
+    ],
+    implementationSteps: [
+      { title: "Pull 4 weeks of meeting data before deploying async tools", detail: "Total hours, % recurring, average attendee count." },
+      { title: "Deploy async summarization and note the exact date", detail: "Copilot recap, Teams transcription, Otter, or Fireflies." },
+      { title: "Measure at 60 and 90 days", detail: "Compare recurring meeting volume and % under 5 attendees." },
+      { title: "Calculate time reclaimed", detail: "Hours saved × headcount × 50 weeks = annual hours, × blended rate." },
+    ],
+    roiExample: "90 days after deploying AI meeting summaries, recurring status meetings dropped 22% — a full workday per person per month back for a 200-person org.",
+    lastUpdated: null, updatedBy: null,
+  },
+  {
+    id: "goal-service-cost-efficiency", title: "Service Cost Efficiency", category: "revenue", tier: 2, maturity: "operational",
+    statement: { action: "lower the cost of delivering customer service", resources: "let AI resolve eligible support issues without escalation", outcome: "reduced agent cost while holding satisfaction steady" },
+    measurementSource: "vendor_api", measures: "Does AI improve customer service economics",
+    sourceDetail: "Percentage of customer issues resolved without a human, and satisfaction scores vs. human-only service",
+    currentValue: null, targetValue: null, unit: null, linkedWorkflowIds: [], linkedNudgeIds: [],
+    vendorSources: [
+      { name: "Zendesk", notes: "Explore Analytics > AI tab — bot resolution rate, CSAT comparison, deflection rate." },
+      { name: "Salesforce", notes: "Einstein Analytics — AI case deflection and handling time with Einstein Bots." },
+      { name: "Intercom", notes: "Fin AI dashboard — resolution rate, CSAT comparison, deflection." },
+    ],
+    implementationSteps: [
+      { title: "Be precise about resolved vs. assisted", detail: "Different cost profiles and CSAT implications — track separately." },
+      { title: "Pull 8 weeks of pre-AI baseline data", detail: "Handle time, first-contact resolution, CSAT, volume by category." },
+      { title: "Track CSAT alongside deflection, not instead of it", detail: "Rising deflection with falling CSAT is a real problem." },
+    ],
+    roiExample: "AI handled 43% of Tier 1 support volume without a human — saving $340K per year while CSAT held steady.",
+    lastUpdated: null, updatedBy: null,
+  },
+  {
+    id: "goal-deal-velocity", title: "Deal Velocity", category: "revenue", tier: 2, maturity: "operational",
+    statement: { action: "shorten the sales cycle", resources: "use AI-assisted proposal drafting and renewal-risk scoring in their deal workflow", outcome: "faster deal closure and revenue pulled forward" },
+    measurementSource: "vendor_api", measures: "Does AI compress the sales cycle",
+    sourceDetail: "Average days from first contact to closed deal for AI-enabled reps vs. the same period prior",
+    currentValue: null, targetValue: null, unit: null, linkedWorkflowIds: [], linkedNudgeIds: [],
+    vendorSources: [
+      { name: "Salesforce", notes: "Reports > Opportunities > Days to close, segmented by rep and AI usage status." },
+      { name: "HubSpot", notes: "Sales Analytics > Deal velocity report, filtered by AI-assisted activity flags." },
+      { name: "Gong", notes: "Deal intelligence — AI call analysis linked to faster close and higher win rates." },
+    ],
+    implementationSteps: [
+      { title: "Pull 12 months of deal cycle time from the CRM", detail: "Segmented by rep, deal size, territory." },
+      { title: "Tag which reps are actively using AI tools", detail: "Match to comparable reps by tenure, quota, territory." },
+      { title: "Compare deal velocity every 90 days", detail: "Days to close, proposal turnaround, activity volume." },
+    ],
+    roiExample: "Reps using AI tools closed deals 34% faster — pulling forward $2.1M in revenue in one quarter.",
+    lastUpdated: null, updatedBy: null,
+  },
+  {
+    id: "goal-license-utilization", title: "License Utilization", category: "capability", tier: 2, maturity: "literate",
+    statement: { action: "get full value from its AI tool investment", resources: "actively use their licensed seats rather than let them sit idle", outcome: "reduced wasted spend and reinvested training budget" },
+    measurementSource: "vendor_api", measures: "Are licensed AI tools being actively used",
+    sourceDetail: "How many licensed seats are in active use, and where the gaps are by team and function",
+    currentValue: null, targetValue: null, unit: null, linkedWorkflowIds: [], linkedNudgeIds: [],
+    vendorSources: [
+      { name: "Microsoft 365", notes: "Admin Center > Reports > Copilot Usage — active users, feature usage, seat utilization." },
+      { name: "Google Workspace", notes: "Admin Console > Reports > Gemini — active users and adoption rate by org unit." },
+      { name: "Any LLM platform", notes: "Admin dashboards show MAU by workspace — compare against procurement seat count." },
+    ],
+    implementationSteps: [
+      { title: "Pull monthly active users for every AI tool", detail: "Compare purchased seats vs. active users at 30/60/90 days." },
+      { title: "Define active as behavior, not login", detail: "At least 3 sessions and 1 substantive output per month." },
+      { title: "Find the root cause before cutting seats", detail: "Low usage usually means a training gap, not waste." },
+    ],
+    roiExample: "An audit found 38% of seats sitting unused — reclaiming them saved $180K and redirected budget to training.",
+    lastUpdated: null, updatedBy: null,
+  },
+  {
+    id: "goal-onboarding-velocity", title: "Onboarding Velocity", category: "capability", tier: 2, maturity: "transformational",
+    statement: { action: "get new hires productive faster", resources: "receive AI-assisted onboarding from day one", outcome: "a shorter ramp time and lower cost per intake class" },
+    measurementSource: "vendor_api", measures: "How fast do new hires get up to speed with AI",
+    sourceDetail: "Days from start date to full performance for AI-assisted onboarding cohorts vs. prior hires",
+    currentValue: null, targetValue: null, unit: null, linkedWorkflowIds: [], linkedNudgeIds: [],
+    vendorSources: [
+      { name: "Workday", notes: "Time-to-productivity tracking against role benchmarks, compared across cohorts." },
+      { name: "Any HRIS", notes: "Combine hire date with first performance milestone — delta is ramp time." },
+    ],
+    implementationSteps: [
+      { title: "Define full productivity per role before the cohort starts", detail: "Quota attainment, tickets resolved, code merged." },
+      { title: "Give new hires AI tools from day one", detail: "Curated prompts, workflow guides, foundational training." },
+      { title: "Track the date each hire hits the benchmark", detail: "Compare against the prior 2-3 intake classes." },
+    ],
+    roiExample: "New hires with AI-assisted onboarding reached full productivity in 5.5 weeks instead of 9 — $180K saved per 20-person intake class.",
+    lastUpdated: null, updatedBy: null,
+  },
+  {
+    id: "goal-capacity-unlock", title: "Capacity Unlock", category: "productivity", tier: 3, maturity: "transformational",
+    statement: { action: "scale output without proportional headcount growth", resources: "use AI to increase individual output volume", outcome: "avoided hiring cost at the same service level" },
+    measurementSource: "system_api", measures: "How does AI output volume translate to headcount capacity",
+    sourceDetail: "AI output modeled as FTE equivalent — quantifies avoided hiring cost without reducing headcount",
+    currentValue: null, targetValue: null, unit: null, linkedWorkflowIds: [], linkedNudgeIds: [],
+    vendorSources: [
+      { name: "Any LLM platform", notes: "Token cost ÷ output volume = cost per unit. Compare to fully loaded human cost per unit." },
+      { name: "GitHub", notes: "Lines of AI-assisted code merged per developer per week." },
+      { name: "Any BI tool", notes: "Cross-system model combining time-log delta + token cost + cycle time. Finance should co-own it." },
+    ],
+    implementationSteps: [
+      { title: "Start with tasks that already have time benchmarks", detail: "High-volume tasks with known durations become the output units." },
+      { title: "Scale to annual hours freed", detail: "Time saved × frequency × people ÷ 2,080 = FTE equivalent." },
+      { title: "Cross-check against LLM cost data", detail: "Both methods should converge — if they diverge, find out why first." },
+      { title: "Present with total program cost in the denominator", detail: "A model that only counts benefits will be challenged immediately." },
+    ],
+    roiExample: "The AI program created the output equivalent of 18 additional people — without a single new hire. Avoided $3.2M in annual cost.",
+    lastUpdated: null, updatedBy: null,
+  },
+  {
+    id: "goal-regulatory-defensibility", title: "Regulatory Defensibility", category: "quality", tier: 3, maturity: "transformational",
+    statement: { action: "make every AI-assisted regulated decision auditable", resources: "log prompts, outputs, and their own review actions consistently", outcome: "lower compliance review time and reduced regulatory exposure" },
+    measurementSource: "system_api", measures: "Can the org defend AI-assisted decisions to regulators",
+    sourceDetail: "Logged record of AI-assisted decisions — reduces audit time and legal exposure in regulated industries",
+    currentValue: null, targetValue: null, unit: null, linkedWorkflowIds: [], linkedNudgeIds: [],
+    vendorSources: [
+      { name: "Azure OpenAI", notes: "Azure Monitor — full prompt/response logging, integrates with Purview compliance." },
+      { name: "Any LLM platform", notes: "Prompt and response logging via API — store in your SIEM with tamper-evident logging." },
+      { name: "ServiceNow", notes: "Governance, Risk and Compliance module logs decisions with review action and timestamp." },
+    ],
+    implementationSteps: [
+      { title: "Identify which decisions need a trail", detail: "Loan approvals, HR actions, medical triage, compliance filings." },
+      { title: "Log four things for every covered decision", detail: "What was prompted, model version, output, human review action, timestamp, user ID." },
+      { title: "Build a retrieval interface auditors can actually use", detail: "A searchable UI is required — raw log files are not acceptable." },
+    ],
+    roiExample: "After implementing AI decision logging, compliance review time dropped 40% — 600 hours per year saved.",
+    lastUpdated: null, updatedBy: null,
+  },
+  {
+    id: "goal-innovation-to-revenue", title: "Innovation-to-Revenue", category: "revenue", tier: 3, maturity: "transformational",
+    statement: { action: "convert AI-assisted ideas into shipped, revenue-generating features", resources: "tag and track their ideas from submission through launch", outcome: "a measurable pipeline attributable to AI-assisted ideation" },
+    measurementSource: "system_api", measures: "Do AI-assisted ideas reach production and generate revenue",
+    sourceDetail: "Revenue traced to product features or initiatives that originated from AI-assisted ideation",
+    currentValue: null, targetValue: null, unit: null, linkedWorkflowIds: [], linkedNudgeIds: [],
+    vendorSources: [
+      { name: "Salesforce", notes: "Opportunity source field tracks feature-influenced revenue for AI-originated features." },
+      { name: "Jira", notes: "An 'AI-originated' flag on backlog items, tracked through to launch." },
+      { name: "Any BI tool", notes: "A funnel: ideas tagged → features shipped → revenue attributed in CRM." },
+    ],
+    implementationSteps: [
+      { title: "Tag AI-originated ideas at submission, not later", detail: "Retroactive tagging introduces bias and will be questioned." },
+      { title: "Follow each idea through every stage", detail: "Submitted → approved → in development → shipped → revenue attributed." },
+      { title: "Apply the attribution model Finance already trusts", detail: "MQL influence, ARR from launches, or NRR improvement." },
+    ],
+    roiExample: "Three features from AI brainstorming sessions shipped last quarter and are associated with $1.2M in new pipeline.",
+    lastUpdated: null, updatedBy: null,
+  },
+  {
+    id: "goal-prompting-efficiency", title: "Prompting Efficiency", category: "capability", tier: 3, maturity: "transformational",
+    statement: { action: "improve how efficiently people use AI tools", resources: "refine their prompting skill over time", outcome: "lower compute cost per unit of output at the same quality" },
+    measurementSource: "system_api", measures: "Does token spend reflect improving skill over time",
+    sourceDetail: "LLM API cost per unit of output — tracks prompting skill development without any formal assessment",
+    currentValue: null, targetValue: null, unit: null, linkedWorkflowIds: [], linkedNudgeIds: [],
+    vendorSources: [
+      { name: "Anthropic", notes: "Console > Usage — token consumption by workspace, project, API key." },
+      { name: "Azure OpenAI", notes: "Azure Monitor metrics, full integration with Cost Management." },
+    ],
+    implementationSteps: [
+      { title: "Tag token usage by team and workflow", detail: "Without tagging, reporting is limited to total org spend." },
+      { title: "Track cost per output, not total spend", detail: "Cost per unit should decrease as prompting skill improves." },
+      { title: "Track the trend monthly for 12 weeks", detail: "Rising volume at stable or declining cost = improving skill." },
+    ],
+    roiExample: "Token cost per output dropped 34% over 12 weeks after training — same quality, lower compute cost.",
+    lastUpdated: null, updatedBy: null,
+  },
+];
+
+const GoalStatement = ({ statement }) => (
+  <div style={{ fontSize: 12, lineHeight: 1.6, color: "#D7E6E9" }}>
+    <span style={{ color: HUD.cyan, fontWeight: 700 }}>The business will</span> {statement.action}, <span style={{ color: HUD.amber, fontWeight: 700 }}>by people who</span> {statement.resources}, <span style={{ color: HUD.green, fontWeight: 700 }}>to achieve</span> {statement.outcome}.
+  </div>
+);
+
+const GoalCard = ({ goal, onUpdateCurrentValue, onOpenDetail }) => {
+  const tier = GOAL_TIER_META[goal.tier];
+  return (
+    <div style={{ background: HUD.panel, border: `1px solid ${HUD.line}`, borderLeftWidth: 3, borderLeftColor: tier.color, padding: "12px 14px", marginBottom: 8, fontFamily: "'Rajdhani', sans-serif" }}>
+      <div style={{ fontSize: 14, fontWeight: 700, color: HUD.text, marginBottom: 6 }}>{goal.title}</div>
+      <GoalStatement statement={goal.statement} />
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 9 }}>
+        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 8, color: tier.color, textTransform: "uppercase", border: `1px solid ${tier.color}`, padding: "2px 6px" }}>
+          Tier {goal.tier} · {tier.name}
+        </span>
+        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 8, color: HUD.muted, textTransform: "uppercase", border: `1px solid ${HUD.muted}`, padding: "2px 6px" }}>
+          GA: {GOAL_MATURITY_META[goal.maturity]}
+        </span>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10, paddingTop: 10, borderTop: `1px solid ${HUD.line}` }}>
+        <label style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 8, color: HUD.muted, textTransform: "uppercase" }}>Current</label>
+        <input
+          value={goal.currentValue ?? ""}
+          onChange={(e) => onUpdateCurrentValue(goal.id, e.target.value)}
+          placeholder="—"
+          style={{ flex: 1, minWidth: 0, background: HUD.panelAlt, border: `1px solid ${HUD.line}`, color: HUD.text, padding: "5px 8px", fontFamily: "'JetBrains Mono', monospace", fontSize: 11 }}
+        />
+        <button onClick={() => onOpenDetail(goal)} style={{ background: "none", border: `1px solid ${HUD.line}`, color: HUD.sub, fontFamily: "'JetBrains Mono', monospace", fontSize: 9, padding: "5px 10px", cursor: "pointer", textTransform: "uppercase", flexShrink: 0 }}>
+          Detail
+        </button>
+      </div>
+    </div>
+  );
+};
+
+const GoalDetail = ({ goal, onClose }) => {
+  const cat = GOAL_CATEGORY_META[goal.category];
+  const tier = GOAL_TIER_META[goal.tier];
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(3,5,7,0.75)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: 20 }}>
+      <div style={{ background: HUD.panelAlt, border: `1px solid ${HUD.cyan}`, maxWidth: 620, width: "100%", maxHeight: "85vh", overflowY: "auto", padding: 28, fontFamily: "'Rajdhani', sans-serif" }}>
+        <button onClick={onClose} style={{ float: "right", background: "none", border: `1px solid ${HUD.line}`, color: HUD.sub, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, padding: "5px 10px", cursor: "pointer" }}>
+          Close
+        </button>
+        <h2 style={{ fontSize: 18, color: HUD.text, margin: "0 0 8px" }}>{goal.title}</h2>
+        <GoalStatement statement={goal.statement} />
+        {goal.measures && <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: HUD.muted, margin: "12px 0" }}>Measures: "{goal.measures}"</div>}
+        {goal.roiExample && <div style={{ fontSize: 12, fontStyle: "italic", color: HUD.sub, margin: "0 0 16px", lineHeight: 1.6 }}>"{goal.roiExample}"</div>}
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 18 }}>
+          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, padding: "3px 10px", border: `1px solid ${cat.color}`, color: cat.color, textTransform: "uppercase" }}>{cat.name}</span>
+          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, padding: "3px 10px", border: `1px solid ${tier.color}`, color: tier.color, textTransform: "uppercase" }}>Tier {goal.tier} · {tier.name}</span>
+          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, padding: "3px 10px", border: `1px solid ${HUD.line}`, color: HUD.sub, textTransform: "uppercase" }}>GA: {GOAL_MATURITY_META[goal.maturity]}</span>
+        </div>
+        {goal.vendorSources && goal.vendorSources.length > 0 && (
+          <>
+            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: HUD.muted, textTransform: "uppercase", marginBottom: 8 }}>Where this data lives in your stack</div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px,1fr))", gap: 8, marginBottom: 18 }}>
+              {goal.vendorSources.map((v) => (
+                <div key={v.name} style={{ background: "#0d1318", border: `1px solid ${HUD.line}`, padding: "9px 11px" }}>
+                  <div style={{ fontSize: 11.5, fontWeight: 600, color: HUD.text, marginBottom: 4 }}>{v.name}</div>
+                  <div style={{ fontSize: 10.5, color: HUD.sub, lineHeight: 1.5 }}>{v.notes}</div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+        {goal.implementationSteps && goal.implementationSteps.length > 0 && (
+          <>
+            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: HUD.muted, textTransform: "uppercase", marginBottom: 8 }}>Implementation steps</div>
+            {goal.implementationSteps.map((s, i) => (
+              <div key={s.title} style={{ display: "flex", gap: 10, padding: "10px 0", borderBottom: i < goal.implementationSteps.length - 1 ? `1px solid ${HUD.line}` : "none" }}>
+                <div style={{ width: 22, height: 22, borderRadius: "50%", border: `1px solid ${HUD.cyan}`, color: HUD.cyan, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'JetBrains Mono', monospace", fontSize: 11, flexShrink: 0 }}>{i + 1}</div>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: HUD.text }}>{s.title}</div>
+                  <div style={{ fontSize: 11.5, color: HUD.sub, marginTop: 3, lineHeight: 1.5 }}>{s.detail}</div>
+                </div>
+              </div>
+            ))}
+          </>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Board groups by category (columns, per PRD §2.4's 4 categories) with tiers
+// stacked bottom-to-top within each column, mirroring design/active/roi-ladder.html.
+// currentValue is hand-editable on every card per phase 2 of PRD §6.3 — no live
+// sync exists yet, that's phases 5-7.
+const TransformationGoals = ({ goals, onGoalsChange }) => {
+  const [detailGoal, setDetailGoal] = useState(null);
+  const categories = Object.keys(GOAL_CATEGORY_META);
+
+  const updateCurrentValue = (id, value) => {
+    onGoalsChange(goals.map((g) => (g.id === id ? { ...g, currentValue: value, lastUpdated: new Date().toISOString() } : g)));
+  };
+
+  return (
+    <div style={{ background: HUD.bg, margin: "-36px -40px", padding: "32px 40px", minHeight: "100vh" }}>
+      <div style={{ marginBottom: 24 }}>
+        <h1 style={{ fontFamily: "'Michroma', sans-serif", fontSize: 18, color: HUD.text, margin: "0 0 8px", letterSpacing: "0.02em" }}>ROI Measurability Ladder</h1>
+        <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: HUD.muted, maxWidth: 680, lineHeight: 1.6 }}>
+          Organized bottom to top by what it takes to capture the data — self-reported signals at the base, deep system integration at the top. Current value is editable by hand for every tier until live sync comes online in later build phases.
+        </p>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: `repeat(${categories.length}, 1fr)`, gap: 12, marginBottom: 12 }}>
+        {categories.map((catKey) => {
+          const cat = GOAL_CATEGORY_META[catKey];
+          return (
+            <div key={catKey} style={{ textAlign: "center", padding: 8, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: "0.04em", textTransform: "uppercase", borderBottom: `2px solid ${cat.color}`, color: cat.color }}>
+              {cat.name}
+              <div style={{ fontSize: 8, color: HUD.muted, marginTop: 3, textTransform: "none", letterSpacing: 0 }}>{cat.owner}</div>
+            </div>
+          );
+        })}
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: `repeat(${categories.length}, 1fr)`, gap: 12 }}>
+        {categories.map((catKey) => (
+          <div key={catKey}>
+            {goals
+              .filter((g) => g.category === catKey)
+              .sort((a, b) => b.tier - a.tier)
+              .map((g) => (
+                <GoalCard key={g.id} goal={g} onUpdateCurrentValue={updateCurrentValue} onOpenDetail={setDetailGoal} />
+              ))}
+          </div>
+        ))}
+      </div>
+      <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 8.5, color: HUD.muted, textAlign: "center", margin: "16px 0 4px", letterSpacing: "0.02em" }}>
+        Note: the original 16+ methods were deliberately built to avoid self-report — the Tier 0 cards above are the honest exception, not a pattern to extend elsewhere in the ladder.
+      </div>
+      {detailGoal && <GoalDetail goal={detailGoal} onClose={() => setDetailGoal(null)} />}
+    </div>
+  );
+};
+
 // ─── NAV ────────────────────────────────────────────────────────────────────────
 const NAV_ITEMS = [
   { id: "survey", label: "Take Assessment" },
@@ -1549,6 +2110,7 @@ const NAV_ITEMS = [
   { id: "builder", label: "Scoring Engine" },
   { id: "reports", label: "Reports" },
   { id: "nudges", label: "Nudges" },
+  { id: "goals", label: "Transformation Goals" },
   { id: "teams", label: "Teams" },
   { id: "config", label: "Config" },
 ];
@@ -1560,6 +2122,7 @@ export default function App() {
   const [tab, setTab] = useState("survey");
   const [respondents, setRespondents] = useState(null);
   const [questions, setQuestions] = useState(null);
+  const [goals, setGoals] = useState(null);
   const [dataError, setDataError] = useState("");
 
   useEffect(() => {
@@ -1578,16 +2141,22 @@ export default function App() {
     let cancelled = false;
     (async () => {
       try {
-        const [r, q] = await Promise.all([loadKey(RESPONDENTS_KEY, MOCK_RESPONDENTS_SEED), loadKey(QUESTIONS_KEY, AIM_QUESTIONS_SEED)]);
+        const [r, q, g] = await Promise.all([
+          loadKey(RESPONDENTS_KEY, MOCK_RESPONDENTS_SEED),
+          loadKey(QUESTIONS_KEY, AIM_QUESTIONS_SEED),
+          loadKey(GOALS_KEY, TRANSFORMATION_GOALS_SEED),
+        ]);
         if (!cancelled) {
           setRespondents(r);
           setQuestions(q);
+          setGoals(g);
         }
       } catch (e) {
         if (!cancelled) {
           setDataError("Couldn't load saved data. Starting with defaults.");
           setRespondents(MOCK_RESPONDENTS_SEED);
           setQuestions(AIM_QUESTIONS_SEED);
+          setGoals(TRANSFORMATION_GOALS_SEED);
         }
       }
     })();
@@ -1606,6 +2175,11 @@ export default function App() {
     await saveKey(QUESTIONS_KEY, next);
   }, []);
 
+  const persistGoals = useCallback(async (next) => {
+    setGoals(next);
+    await saveKey(GOALS_KEY, next);
+  }, []);
+
   const persistUsers = useCallback(async (next) => {
     setUsers(next);
     await saveKey(USERS_KEY, next);
@@ -1621,7 +2195,7 @@ export default function App() {
 
   if (!user) return <Login users={users} onLogin={(u) => setUser(u)} />;
 
-  const loading = respondents === null || questions === null;
+  const loading = respondents === null || questions === null || goals === null;
   const visibleNav = NAV_ITEMS.filter((n) => (TAB_PERMS[n.id] || []).includes(user.role));
   const activeTab = visibleNav.some((n) => n.id === tab) ? tab : visibleNav[0]?.id;
 
@@ -1678,6 +2252,7 @@ export default function App() {
             {activeTab === "builder" && <ScoringEngine />}
             {activeTab === "reports" && <Reports respondents={respondents} />}
             {activeTab === "nudges" && <PlaceholderSection title="Nudge Library" sub="Skill reinforcement nudges — behavioral prompts and tool adoption questions" />}
+            {activeTab === "goals" && <TransformationGoals goals={goals} onGoalsChange={persistGoals} />}
             {activeTab === "teams" && <Teams users={users} onUsersChange={persistUsers} currentUser={user} />}
             {activeTab === "config" && <PlaceholderSection title="Configuration" sub="Thresholds, feature flags, and privacy settings" />}
           </>

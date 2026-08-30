@@ -184,8 +184,11 @@ Top-level tabs (peers, not nested):
 { id, title,                 // business-impact name, e.g. "Efficiency Gains"
   category: 'productivity'|'quality'|'revenue'|'capability',
   tier: 0|1|2|3,
+  maturity: 'literate'|'applied'|'operational'|'transformational', // GA stage — see §2.4, distinct axis from tier
   statement: { action, resources, outcome },  // the three sentence fragments
   measurementSource: 'nudge'|'manual'|'vendor_api'|'system_api',
+  measures?: string,           // the underlying question/signal this goal tracks
+  sourceDetail?: string,       // how the measurement is actually captured
   currentValue, targetValue?, unit?,
   linkedWorkflowIds: string[], linkedNudgeIds: string[],
   vendorSources?: [{ name, notes }],          // for tiers 2-3
@@ -193,6 +196,10 @@ Top-level tabs (peers, not nested):
   roiExample?: string,
   lastUpdated, updatedBy }
 ```
+*(`maturity` was added 2026-08-30, during the phase-2 build: §2.4 already required every Goal
+card to show "Tier + GA maturity tags," but this schema had omitted the field. `measures` and
+`sourceDetail` were also added to carry over context from the client's real ROI grid content
+now seeded in `app/App.jsx`.)*
 
 ### Nudge — *not yet built*
 ```
@@ -254,7 +261,7 @@ Category color (shown on column headers) and tier color (shown on card left-bord
 
 ### 6.3 Build sequence
 1. ✅ Consolidate this spec (current step).
-2. Add **Transformation Goals** as a real data model in the current prototype (still `window.storage`), editable `currentValue` by hand for every tier — makes the ROI ladder live instead of static.
+2. ✅ Add **Transformation Goals** as a real data model in the current prototype (still `window.storage`), editable `currentValue` by hand for every tier — makes the ROI ladder live instead of static. Seed content is the client's real ROI grid (19 goals across all 4 categories × 4 tiers), transcribed from `design/active/roi-ladder.html` into `app/App.jsx`, not placeholder data. `currentValue` seeds as `null` on every goal — the `roiExample` strings are the client's own illustrative case-study language, not this org's live numbers, so a fabricated starting value would misrepresent them as real.
 3. Build **Nudges** tab; wire Tier 0 goals to real Nudge response data and existing Readiness scores (no new infra needed — data already flows through the app).
 4. Add manual-entry admin forms for Tier 1 goals.
 5. Migrate off `window.storage` to the real backend (Vercel + Supabase) — this is also when real auth replaces plaintext passcodes.
