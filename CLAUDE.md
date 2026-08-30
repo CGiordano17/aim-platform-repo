@@ -14,6 +14,11 @@ product decisions; see PRD §2.1 for how each stage maps to a product area.
 **`docs/PRD-Engineering-Framework.md` is the single source of truth** for this
 project's data models, design system tokens, and engineering build sequence.
 
+For a section-by-section, task-scoped breakdown of the PRD, see the
+`aim-platform` skill at `.claude/skills/aim-platform/SKILL.md` — consult it
+for any structural change (new data shape, new tab, new visual pattern) so
+conventions aren't re-derived from memory or re-improvised.
+
 - Read it before making any structural change (new data shape, new nav item,
   new visual pattern).
 - Update it whenever a decision changes — it's a living document, not a
