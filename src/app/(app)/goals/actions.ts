@@ -21,3 +21,23 @@ export async function updateGoalCurrentValue(id: string, value: string) {
   if (error) throw new Error(`Failed to update goal ${id}: ${error.message}`);
   revalidatePath("/goals");
 }
+
+// Tier 1 manual-entry admin form (PRD build phase 4) — RLS
+// ("goal_review_entries_insert_admin") restricts this to superadmin/hradmin,
+// since it's expert review, not open editing like currentValue above.
+export async function logGoalReview(goalId: string, note: string, flagged: boolean) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const { error } = await supabase.from("goal_review_entries").insert({
+    goal_id: goalId,
+    reviewer_id: user?.id ?? null,
+    note: note.trim() || null,
+    flagged,
+  });
+
+  if (error) throw new Error(`Failed to log review for goal ${goalId}: ${error.message}`);
+  revalidatePath("/goals");
+}

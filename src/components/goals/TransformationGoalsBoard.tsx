@@ -14,9 +14,11 @@ import { GoalDetail } from "./GoalDetail";
 export function TransformationGoalsBoard({
   initialGoals,
   onUpdateCurrentValue,
+  onLogReview,
 }: {
   initialGoals: TransformationGoal[];
   onUpdateCurrentValue: (id: string, value: string) => Promise<void>;
+  onLogReview: (goalId: string, note: string, flagged: boolean) => Promise<void>;
 }) {
   const [goals, setGoals] = useState(initialGoals);
   const [detailGoal, setDetailGoal] = useState<TransformationGoal | null>(null);
@@ -70,7 +72,7 @@ export function TransformationGoalsBoard({
         Note: the original 16+ methods were deliberately built to avoid self-report — the Tier 0 cards above are the
         honest exception, not a pattern to extend elsewhere in the ladder.
       </div>
-      {detailGoal && <GoalDetail goal={detailGoal} onClose={() => setDetailGoal(null)} />}
+      {detailGoal && <GoalDetail goal={detailGoal} onClose={() => setDetailGoal(null)} onLogReview={onLogReview} />}
     </div>
   );
 }

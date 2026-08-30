@@ -3,8 +3,17 @@
 import type { TransformationGoal } from "@/lib/types";
 import { GOAL_CATEGORY_META, GOAL_TIER_META, GOAL_MATURITY_META } from "@/lib/goal-meta";
 import { GoalStatement } from "./GoalStatement";
+import { Tier1ReviewLog } from "./Tier1ReviewLog";
 
-export function GoalDetail({ goal, onClose }: { goal: TransformationGoal; onClose: () => void }) {
+export function GoalDetail({
+  goal,
+  onClose,
+  onLogReview,
+}: {
+  goal: TransformationGoal;
+  onClose: () => void;
+  onLogReview: (goalId: string, note: string, flagged: boolean) => Promise<void>;
+}) {
   const cat = GOAL_CATEGORY_META[goal.category];
   const tier = GOAL_TIER_META[goal.tier];
 
@@ -65,6 +74,7 @@ export function GoalDetail({ goal, onClose }: { goal: TransformationGoal; onClos
             ))}
           </>
         )}
+        {goal.tier === 1 && <Tier1ReviewLog goalId={goal.id} onLog={onLogReview} />}
       </div>
     </div>
   );

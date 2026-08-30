@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import type { TransformationGoal } from "@/lib/types";
 import { TransformationGoalsBoard } from "@/components/goals/TransformationGoalsBoard";
-import { updateGoalCurrentValue } from "./actions";
+import { updateGoalCurrentValue, logGoalReview } from "./actions";
 
 // Maps a snake_case DB row (supabase/migrations/0001_init.sql) back to the
 // camelCase TransformationGoal shape used throughout the UI layer.
@@ -47,5 +47,5 @@ export default async function GoalsPage() {
 
   const goals = (data ?? []).map(mapRow);
 
-  return <TransformationGoalsBoard initialGoals={goals} onUpdateCurrentValue={updateGoalCurrentValue} />;
+  return <TransformationGoalsBoard initialGoals={goals} onUpdateCurrentValue={updateGoalCurrentValue} onLogReview={logGoalReview} />;
 }

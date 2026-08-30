@@ -133,6 +133,20 @@ export interface TransformationGoal {
   updatedBy?: string | null;
 }
 
+// Tier 1 manual-entry review log (PRD build phase 4) — not in the original
+// PRD §4 TransformationGoal shape; added alongside supabase/migrations/
+// 0002_tier1_review_log.sql. See that file's comment for why a log,
+// not just a bigger currentValue field.
+export interface GoalReviewEntry {
+  id: string;
+  goalId: string;
+  reviewerId: string | null;
+  reviewerName?: string | null;
+  note: string | null;
+  flagged: boolean;
+  createdAt: string;
+}
+
 // Nudge / Integration: PRD §4 marks both "not yet built" as features. Types
 // and schema are reserved ahead of build phases 3 and 6 respectively.
 export interface Nudge {

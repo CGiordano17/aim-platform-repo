@@ -72,6 +72,16 @@ content in `src/lib/data/transformation-goals-seed.ts` (the client's real
 19-goal ROI grid, originally transcribed from `design/active/roi-ladder.html`
 into `prototype/App.jsx` during build phase 2, now the canonical copy).
 
+### GoalReviewEntry — Tier 1 manual-review log (added build phase 4, not in the original PRD §4 list)
+```
+{ id, goalId, reviewerId, note?, flagged: boolean, createdAt }
+```
+One row per expert-review event on a Tier 1 goal — schema in
+`supabase/migrations/0002_tier1_review_log.sql`, TS type in `src/lib/types.ts`.
+Exists because Tier 1's "manual tagging / expert review" mechanism (PRD
+§2.4) implies a running log, not one overwritable number the way
+`currentValue` works for every other tier.
+
 ### Nudge — *not yet built*
 ```
 { id, questionText, linkedGoalId, cadence: 'per-completion'|'weekly'|'monthly',
@@ -88,12 +98,19 @@ into `prototype/App.jsx` during build phase 2, now the canonical copy).
 ## Where these live today
 
 Every model above has a real Postgres table + RLS policy in
-`supabase/migrations/0001_init.sql` as of the phase-5 migration (pulled
-forward — see `references/engineering.md`). Only **TransformationGoal**
-(and, implicitly, Profile/Question via auth + the seed script) has actual
-data flowing through it and a real UI. Respondent, Workflow, Intervention,
-Nudge, and Integration have schema but no UI yet — Nudge and Integration
-also have no logic wired to their tables (both still "not yet built" as
-*features*, per PRD §4, even though their tables now exist). The original
-`window.storage`-only versions of these models live only in
-`prototype/App.jsx` now, which is no longer being extended.
+`supabase/migrations/0001_init.sql`. As of build phases 3-6 (see
+`references/engineering.md`), **Profile, Question, Respondent,
+TransformationGoal, and Nudge/NudgeResponse all have real UI and real data
+flowing through them.** TransformationGoal also has a Tier-1-only companion
+table, `goal_review_entries` (`0002_tier1_review_log.sql`), not in the PRD §4
+shape above — a log of individual manual-review events, since Tier 1's
+"expert review" mechanism doesn't fit a single overwritable `currentValue`.
+
+**Workflow and Intervention** have schema but no UI — the Workflows tab is a
+pre-existing gap (referenced in PRD §3's nav, has a mockup, was never built
+even in the original prototype), and Interventions ride along with it since
+nothing surfaces them yet either. **Integration** has schema but no UI and
+no logic (build phase 6, no vendor chosen — see `references/engineering.md`).
+
+`prototype/App.jsx` is no longer a live reference for anything — every tab
+it had is ported. Keep it only as design history.

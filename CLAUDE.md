@@ -57,22 +57,29 @@ once Transformation Goals (phase 2) already existed. Real auth (Supabase
 Auth: email/password + Google/Microsoft SSO) and a full Postgres schema +
 RLS exist for every PRD §4 data model — see `supabase/migrations/0001_init.sql`.
 
-**Real and DB-backed today:** auth, the role-gated app shell, and the
-**Transformation Goals** tab (`src/app/(app)/goals/`).
+**Real and DB-backed today:** everything the original prototype had —
+Take Assessment, Assessment Builder, Scoring Engine, Dashboard, Reports,
+Teams, and Transformation Goals (now also with a Tier 1 manual-review log on
+top). Nudges (phase 3) is also built: admin-authored on the Nudges tab, with
+actual response collection living on the Dashboard's "Nudges for you" widget
+since PRD §3 keeps the Nudges tab itself admin-only. `src/components/
+NotMigrated.tsx` is now unused — nothing points to it anymore.
 
-**Still stubs** (`src/components/NotMigrated.tsx` placeholder, honest about
-not being real yet): Dashboard, Assessment Builder, Take Assessment, Scoring
-Engine, Reports, Teams. Porting each from `prototype/App.jsx` is unstarted
-follow-up work — don't assume they're live.
+**Not built:** the **Workflows** tab. It's referenced in PRD §3's nav table
+and has a mockup (`design/active/workflows-interventions.html`), but was
+never implemented even in the original prototype — this is a pre-existing
+gap, not one of PRD §6.3's numbered phases. The **Integrations registry**
+(phase 6) and **deep integrations** (phase 7) are also still ahead — schema
+for Integrations is reserved in `supabase/migrations/0001_init.sql`, no UI,
+no vendor chosen.
 
 `prototype/App.jsx` (moved from the old `app/App.jsx` — Next.js's App Router
 needed that path) is the **original browser-only artifact prototype**:
 single-file React using the artifact `window.storage` key-value API, demo
-plaintext-passcode auth. It is no longer live, but treat it as a **reference
-for data shapes and UI conventions** for the tabs not yet ported — it's not
-deployable and not being extended further. `design/active/` and
-`design/archive/` hold prior mockups; archive entries are superseded where
-they conflict with the PRD (see PRD §8).
+plaintext-passcode auth. It is no longer live and nothing currently depends
+on it as a reference — every tab it had is ported. Keep it only as design
+history. `design/active/` and `design/archive/` hold prior mockups; archive
+entries are superseded where they conflict with the PRD (see PRD §8).
 
 ## Design system
 
