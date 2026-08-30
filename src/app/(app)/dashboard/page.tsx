@@ -3,19 +3,36 @@ import { mapRespondentRow } from "@/lib/respondents";
 import { avg, SEGMENT_META, PATHWAY_META, type Segment, type Pathway } from "@/lib/scoring";
 import { AdoptionCurve } from "@/components/shared/AdoptionCurve";
 import { StatCard, SectionLabel, ScoreBar } from "@/components/shared/ui";
+import { NudgesForYou } from "@/components/nudges/NudgesForYou";
+import { submitNudgeResponse } from "@/app/(app)/nudges/actions";
 
 const SEGMENT_ORDER: Segment[] = ["innovator", "early_adopter", "early_majority", "late_majority", "laggard"];
 const PATHWAY_ORDER: Pathway[] = ["enabled", "augmented", "superpowered"];
 
 export default async function DashboardPage() {
   const supabase = await createClient();
-  const { data, error } = await supabase.from("respondents").select("*");
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const [{ data, error }, { data: profile }, { data: nudgeRows }] = await Promise.all([
+    supabase.from("respondents").select("*"),
+    user ? supabase.from("profiles").select("department, role").eq("id", user.id).single() : Promise.resolve({ data: null }),
+    supabase.from("nudges").select("id, question_text, target_department, target_role"),
+  ]);
 
   if (error) {
     return (
       <div className="p-10 text-hud-text font-body text-sm">Couldn&apos;t load Readiness data: {error.message}</div>
     );
   }
+
+  // A nudge applies to the signed-in person if it's untargeted, or its
+  // target department/role matches theirs — PRD §4's Nudge.targetAudience
+  // also allows individualIds, which isn't built yet (see Nudges tab).
+  const applicableNudges = (nudgeRows ?? [])
+    .filter((n) => (!n.target_department || n.target_department === profile?.department) && (!n.target_role || n.target_role === profile?.role))
+    .map((n) => ({ id: n.id, questionText: n.question_text }));
 
   const respondents = (data ?? []).map(mapRespondentRow);
   const completed = respondents.filter((r) => r.completedPost).length;
@@ -34,6 +51,8 @@ export default async function DashboardPage() {
         <h1 className="text-[28px] font-light text-hud-text mb-1 tracking-tight">AIM Readiness Overview</h1>
         <p className="text-sm text-hud-sub">AI Measurement framework — pre and post assessment tracking</p>
       </div>
+
+      <NudgesForYou nudges={applicableNudges} onRespond={submitNudgeResponse} />
 
       {respondents.length === 0 ? (
         <div className="p-10 bg-hud-panel border border-hud-line text-center text-hud-muted text-[13px]">
