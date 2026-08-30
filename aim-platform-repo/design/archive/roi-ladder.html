@@ -1,0 +1,348 @@
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Michroma&family=Rajdhani:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #030507; font-family: 'Rajdhani', sans-serif; color: #E7EEF2; }
+  :root { --cyan:#5EE6FF; --violet:#C79EF0; --amber:#F0A94E; --rose:#F08FB0; --sub:#6E8790; --line:rgba(94,230,255,0.12); }
+  .stage { min-height: 1000px; padding: 24px 24px 40px; background: #030507;
+    background-image: linear-gradient(rgba(94,230,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(94,230,255,0.03) 1px, transparent 1px);
+    background-size: 26px 26px; max-width: 1300px; margin: 0 auto; }
+  .head { text-align: center; padding: 4px 0 6px; }
+  .head h1 { font-family: 'Michroma', sans-serif; font-size: 15px; margin: 0; letter-spacing: 0.04em; }
+  .head h1 span { color: var(--cyan); }
+  .head p { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: var(--sub); margin: 8px 0 0; max-width: 680px; margin-left: auto; margin-right: auto; line-height: 1.6; }
+
+  .tierlegend { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 18px 0 16px; }
+  .tl { padding: 9px 12px; border: 1px solid; text-align: center; }
+  .tl .n { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 600; }
+  .tl .s { font-family: 'JetBrains Mono', monospace; font-size: 8px; color: var(--sub); margin-top: 3px; }
+
+  .icards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 4px 0 10px; }
+  .icard { background: rgba(16,21,26,0.7); border: 1px solid var(--line); padding: 10px 12px; cursor: pointer; display: flex; gap: 9px; align-items: flex-start; }
+  .icard:hover { border-color: rgba(94,230,255,0.4); }
+  .icard.active { border-color: var(--cyan); background: rgba(94,230,255,0.06); }
+  .icard .ic { font-size: 15px; flex-shrink: 0; }
+  .icard .it { font-size: 11.5px; font-weight: 600; color: #EAF6F8; line-height: 1.3; }
+  .icard .io { font-family: 'JetBrains Mono', monospace; font-size: 8.5px; color: var(--sub); margin-top: 3px; }
+
+  .freerow { display: flex; gap: 8px; margin-bottom: 8px; }
+  .freerow input { flex: 1; background: #0a1116; border: 1px solid var(--line); color: #EAF6F8; padding: 9px 12px; font-family: 'Rajdhani', sans-serif; font-size: 13px; }
+  .freerow button { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; padding: 0 16px; background: transparent; border: 1px solid rgba(94,230,255,0.4); color: var(--cyan); clip-path: polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px); cursor: pointer; text-transform: uppercase; }
+  .freerow button:disabled { opacity: 0.5; cursor: default; }
+  .clearbtn { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: var(--sub); background: none; border: 1px solid #253038; padding: 0 12px; cursor: pointer; }
+  .loading { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--amber); display: none; margin-bottom: 8px; }
+  .recbar { display: none; background: rgba(94,230,255,0.05); border: 1px solid rgba(94,230,255,0.25); padding: 10px 14px; margin-bottom: 14px; font-size: 12.5px; line-height: 1.6; color: #C6D0D4; }
+  .recbar b { color: var(--cyan); }
+  .note { font-family: 'JetBrains Mono', monospace; font-size: 8.5px; color: var(--sub); text-align: center; margin: 10px 0 20px; letter-spacing: 0.02em; }
+
+  .pyramidwrap { position: relative; }
+  svg#apexlayer { position: absolute; top: 0; left: 0; pointer-events: none; }
+
+  .colheads { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 10px; }
+  .colhead { text-align: center; padding: 8px; font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.04em; text-transform: uppercase; border-bottom: 2px solid; }
+  .colhead .own { display: block; font-size: 8px; color: var(--sub); margin-top: 3px; text-transform: none; letter-spacing: 0; }
+
+  .board { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .tiercol { display: flex; flex-direction: column-reverse; gap: 8px; }
+  .cell { background: rgba(16,21,26,0.75); border: 1px solid var(--line); border-left-width: 3px; padding: 10px 11px; cursor: pointer; transition: opacity 0.2s, border-color 0.15s; position: relative; }
+  .cell:hover { border-color: rgba(94,230,255,0.4); }
+  .cell.dim { opacity: 0.16; }
+  .cell.primary { border-color: var(--cyan) !important; box-shadow: 0 0 8px rgba(94,230,255,0.25); }
+  .cell.secondary { border-color: var(--amber) !important; }
+  .cell.nudge { background: rgba(240,169,78,0.05); }
+  .cell .badge { position: absolute; top: 6px; right: 6px; font-family: 'JetBrains Mono', monospace; font-size: 7px; padding: 1px 5px; text-transform: uppercase; }
+  .cell.primary .badge { color: var(--cyan); border: 1px solid var(--cyan); }
+  .cell.secondary .badge { color: var(--amber); border: 1px solid var(--amber); }
+  .cell .lbl { font-size: 11.5px; font-weight: 600; color: #EAF6F8; line-height: 1.35; }
+  .cell .sub { font-size: 9.5px; color: #9FB6BC; line-height: 1.35; margin-top: 4px; }
+  .cell .taglist { display: flex; gap: 6px; margin-top: 7px; flex-wrap: wrap; }
+  .cell .ttag { font-family: 'JetBrains Mono', monospace; font-size: 7px; color: #45585e; text-transform: uppercase; }
+
+  .apexcard { max-width: 480px; margin: 0 auto 18px; background: rgba(94,230,255,0.06); border: 1px solid var(--cyan); padding: 14px 18px; text-align: center; display: none; }
+  .apexcard .al { font-family: 'JetBrains Mono', monospace; font-size: 8.5px; color: var(--cyan); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 6px; }
+  .apexcard .at { font-size: 15px; font-weight: 600; color: #EAF6F8; margin-bottom: 6px; }
+  .apexcard .as { font-size: 11px; color: #9FB6BC; line-height: 1.5; }
+
+  .detail { display: none; margin-top: 24px; background: rgba(16,21,26,0.85); border: 1px solid rgba(94,230,255,0.25); padding: 22px; }
+  .detail .close { float: right; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--sub); background: none; border: 1px solid #253038; padding: 5px 10px; cursor: pointer; }
+  .detail h2 { font-size: 17px; margin: 0 0 6px; }
+  .detail .roi { font-size: 12.5px; font-style: italic; color: #9FB6BC; margin-bottom: 14px; line-height: 1.6; }
+  .detail .tags { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+  .detail .tag { font-family: 'JetBrains Mono', monospace; font-size: 9px; padding: 3px 10px; border: 1px solid rgba(94,230,255,0.35); color: var(--cyan); text-transform: uppercase; }
+  .stacktitle { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--sub); margin-bottom: 8px; }
+  .stackgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px,1fr)); gap: 8px; margin-bottom: 18px; }
+  .scard { background: #0a1116; border: 1px solid var(--line); padding: 9px 11px; }
+  .scard .n { font-size: 11.5px; font-weight: 600; color: #EAF6F8; margin-bottom: 4px; }
+  .scard .w { font-size: 10.5px; color: #9FB6BC; line-height: 1.5; }
+  .step { display: flex; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .step:last-child { border-bottom: none; }
+  .snum { width: 22px; height: 22px; border: 1px solid var(--cyan); color: var(--cyan); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-size: 11px; flex-shrink: 0; }
+  .st { font-size: 13px; font-weight: 600; color: #EAF6F8; }
+  .sd { font-size: 11.5px; color: #9FB6BC; margin-top: 3px; line-height: 1.5; }
+</style>
+
+<div class="stage">
+  <div class="head">
+    <h1>ROI MEASURABILITY LADDER / <span>AIM</span></h1>
+    <p>ORGANIZED BOTTOM TO TOP BY WHAT IT TAKES TO CAPTURE THE DATA — SELF-REPORTED SIGNALS AT THE BASE, DEEP SYSTEM INTEGRATION AT THE TOP. SELECT AN OBJECTIVE TO SEE WHICH RUNGS BUILD ITS EVIDENCE.</p>
+  </div>
+
+  <div class="tierlegend" id="tierlegend"></div>
+
+  <div class="icards" id="icards"></div>
+  <div class="freerow">
+    <input id="finput" placeholder="e.g. The CFO wants to know if our AI tools are worth the licensing cost" />
+    <button id="abtn" onclick="runAI()">Find methods ↗</button>
+    <button class="clearbtn" onclick="clearAll()">Clear</button>
+  </div>
+  <div class="loading" id="loading">Matching objective to measurement methods…</div>
+  <div class="recbar" id="recbar"></div>
+
+  <div class="apexcard" id="apexcard">
+    <div class="al">Converging claim</div>
+    <div class="at" id="apexTitle"></div>
+    <div class="as" id="apexSummary"></div>
+  </div>
+
+  <div class="colheads" id="colheads"></div>
+  <div class="pyramidwrap">
+    <svg id="apexlayer" width="100%" height="100%"></svg>
+    <div class="board" id="board"></div>
+  </div>
+
+  <div class="note">Note: the original 16 methods were deliberately built to avoid self-report — the four base-tier Nudge entries below fill that rung honestly rather than force-fitting existing methods into it.</div>
+  <div class="detail" id="detail"></div>
+</div>
+
+<script>
+  var FRAMES = {
+    productivity: { name: "Productivity & efficiency", owner: "COO · CHRO · Operations", color: "#5EE6FF" },
+    quality: { name: "Quality & risk", owner: "Functional leads · GC · CISO", color: "#C79EF0" },
+    revenue: { name: "Revenue & impact", owner: "CEO · CRO · CCO", color: "#F0A94E" },
+    capability: { name: "Workforce capability", owner: "CLO · CHRO", color: "#F08FB0" }
+  };
+
+  var TIERS = [
+    { name: "Self-reported", sub: "Nudge / Assessment", color: "#F0A94E" },
+    { name: "Manual tagging", sub: "Human flags it / expert review", color: "#9FB6BC" },
+    { name: "Native vendor reporting", sub: "Admin console you already have", color: "#5EE6FF" },
+    { name: "Deep system integration", sub: "API telemetry / cross-system model", color: "#C79EF0" }
+  ];
+  var MATURITY = { literate: "Literate", applied: "Applied", operational: "Operational", transformational: "Transformational" };
+
+  // col field now = measurability tier (0 self-report -> 3 deep integration), not "deploy complexity"
+  var cells = [
+    { frame:"productivity", col:0, nudge:true, maturity:"literate", label:"Have you used an AI-augmented workflow this week?", sub:"Direct Nudge sent after workflow completion or on a weekly cadence — the fastest signal to stand up, lowest confidence alone", vendors:[{n:"Nudges",w:"In-app micro-prompt tied to a specific Workflow. Response rate and yes/no ratio feed straight into that workflow's usage % on the Workflows board."}], roi:"Within 2 weeks of turning on weekly Nudges, self-reported usage of the sales proposal workflow hit 61% — enough signal to justify instrumenting it properly.", steps:[{t:"Pick the workflow to Nudge on",d:"Tie it to a specific banked or piloting workflow, not a vague 'are you using AI' question."},{t:"Set a cadence",d:"Weekly for high-frequency workflows, per-completion for rarer ones."},{t:"Treat it as directional, not proof",d:"Self-report inflates usage — use it to prioritize what to instrument next, not as the final ROI number."},{t:"Compare against system data once available",d:"When native or system-integration data comes online for the same workflow, reconcile the gap."}] },
+    { frame:"quality", col:0, nudge:true, maturity:"literate", label:"Do you trust the AI output enough to use it without double-checking?", sub:"Direct Nudge measuring perceived trust — the individual-level companion to the Trust dimension in Readiness", vendors:[{n:"Nudges",w:"Short single-question prompt after an AI-assisted task. Rolls up into the same Trust score tracked in Readiness."}], roi:"Trust nudges showed only 34% of the finance team would use AI output unchecked — flagged before it became a compliance incident.", steps:[{t:"Ask right after task completion",d:"Trust in the moment is more honest than trust recalled later."},{t:"Segment by department",d:"Trust varies sharply by function — don't average it away."},{t:"Pair with the accuracy monitoring rung above",d:"Low self-reported trust plus low measured accuracy is a real problem; low trust with high accuracy is a change-management problem."}] },
+    { frame:"revenue", col:0, nudge:true, maturity:"literate", label:"Did AI help you move this deal or interaction forward faster?", sub:"Direct Nudge to reps or support agents right after a customer interaction", vendors:[{n:"Nudges",w:"Post-interaction micro-prompt, optionally paired with a follow-up on what specifically helped."}], roi:"73% of reps who got the nudge said AI shortened at least one step in their last deal — early signal ahead of full CRM instrumentation.", steps:[{t:"Trigger right after deal stage changes or ticket closes",d:"Immediate recall beats end-of-week recall."},{t:"Keep it to one tap",d:"Yes/no plus an optional one-line comment — anything longer kills response rate."},{t:"Use as a leading indicator only",d:"Confirm with CRM-native deal velocity data once volume is high enough."}] },
+    { frame:"capability", col:0, maturity:"literate", label:"How prepared is the workforce before training begins", sub:"Baseline diagnostic measuring trust in AI, current skill level, and openness to change — before training investment begins", vendors:[{n:"Workday",w:"Import structured assessment scores into learner profiles, track readiness segmentation."},{n:"Cornerstone",w:"Benchmark readiness scores against org-wide averages, track pathway assignment."},{n:"Any stack",w:"A validated diagnostic covering trust, preparedness, willingness — deploy before training begins."}], roi:"Before spending on training, assessment data showed 43% of employees needed foundational skills — budget went where it moved the needle.", steps:[{t:"Run the assessment before any training — no exceptions",d:"Assessing after training loses the ability to measure movement."},{t:"Measure trust, preparedness, and willingness",d:"All three predict adoption outcomes independently."},{t:"Segment people into cohorts based on results",d:"Foundational, Proficiency, Advanced."},{t:"Map results across the org",d:"Which functions are furthest behind, which are already ahead."},{t:"Re-run at 60 and 90 days post-training",d:"The delta becomes the ROI instrument."}] },
+
+    { frame:"productivity", col:1, maturity:"operational", label:"Does AI actually change how work gets done", sub:"End-to-end process time for AI-assisted vs. non-AI tasks in project and ticketing tools", vendors:[{n:"Jira",w:"Add a custom field 'AI used: yes/no' on each ticket. Pull cycle time report segmented by that field."},{n:"ServiceNow",w:"Now Intelligence dashboard — AI Assist tracking is native."},{n:"Zendesk",w:"Explore Analytics > AI tab — handle time, resolution rate, deflection rate."}], roi:"Tasks flagged as AI-assisted closed 56% faster than non-AI tasks — the equivalent of 1.4 additional people without adding a single hire.", steps:[{t:"Add one checkbox to the existing task system",d:"'AI used: yes/no' — a dropdown creates friction that kills compliance."},{t:"Define start and end for each workflow",d:"Ticket created → resolved. Pick one definition per workflow type."},{t:"Wait 8 weeks before drawing conclusions",d:"Run the comparison within the same team — AI-using vs. non-AI members."},{t:"Build one dashboard showing the split",d:"Median cycle time, first-pass quality, volume — divided by AI flag."},{t:"Frame the story as throughput, not just speed",d:"Same team, same workload, faster output — translate to cost."}] },
+    { frame:"quality", col:1, maturity:"operational", label:"How accurate are AI outputs going into production", sub:"Factual error rate in AI-generated content, tracked against verified internal sources", vendors:[{n:"Microsoft 365",w:"Copilot citations log source references — spot-check against SharePoint knowledge base."},{n:"Any LLM platform",w:"Sample 10% of outputs weekly, log error type per output."},{n:"Any stack",w:"Patronus AI, Galileo, or LangSmith for automated accuracy monitoring at API layer — this rung moves up to Tier 3 once automated."}], roi:"After putting a simple accuracy review process in place, published errors dropped 73% — saving an estimated $65K annually.", steps:[{t:"Match the verification source to content type",d:"Policy → knowledge base, technical → specs, compliance → regulatory databases."},{t:"Review a random 10% of AI outputs weekly",d:"Log error type, content category, reviewer, date."},{t:"Decide review approach based on volume",d:"Manual spot-check, retrieval-augmented, or automated eval tools."},{t:"Track error rate week over week",d:"Watch for spikes tied to model version changes."},{t:"Report as both quality improvement and risk reduction",d:"Pre vs. post rate × cost to catch an error × annual volume = savings."}] },
+    { frame:"quality", col:1, maturity:"operational", label:"Has output quality improved since AI deployment", sub:"Side-by-side scoring of AI-assisted vs. non-AI work by reviewers who do not know which is which", vendors:[{n:"Any stack",w:"Design a rubric, pull a random sample, blind reviewers to AI origin — the methodology is what makes this credible."},{n:"Microsoft 365",w:"SharePoint version history — revision round count as a quality proxy."}], roi:"Blind reviewers scored AI-assisted proposals 18% higher on clarity and completeness — quality up while costs came down.", steps:[{t:"Build a simple scoring rubric — 4 to 6 dimensions",d:"Accuracy, clarity, completeness, compliance, time to produce."},{t:"Pull a random sample of 20-30 outputs per team per quarter",d:"Blind reviewers to AI involvement — random selection prevents cherry-picking."},{t:"Calibrate reviewers before they score anything",d:"Independently score sample outputs, compare, and align."},{t:"Compare AI-assisted outputs to the non-AI baseline",d:"Dimensions scoring lower are training gaps, not reasons to pause."},{t:"Combine quality score with time-to-produce",d:"Quality ÷ hours invested captures both simultaneously."}] },
+    { frame:"capability", col:1, maturity:"applied", label:"Do skill scores improve measurably after training", sub:"Skill scores before training and again 60 days later — using real tasks, not multiple choice", vendors:[{n:"Workday",w:"Import pre/post assessment scores, track uplift per learner."},{n:"Degreed",w:"Skill proficiency tracking natively, connected to training pathway completion."},{n:"Any stack",w:"Real task scenarios scored against a rubric by calibrated reviewers."}], roi:"60 days after training, average skill score improved from 4.8 to 7.8 out of 10 — verified through practical tasks, not a satisfaction survey.", steps:[{t:"Use real tasks, not multiple choice",d:"Assessors score observable output against a rubric — eliminates self-report bias."},{t:"Calibrate scorers before they evaluate anything",d:"Independently score the same sample, compare and align."},{t:"Wait 60 days before the post-assessment",d:"Immediate scores overestimate retention."},{t:"Connect skill scores to something the CEO measures",d:"Platform usage, cycle time, or output quality."},{t:"Set a minimum improvement target in the training contract",d:"Makes measurement a shared accountability."}] },
+    { frame:"capability", col:1, maturity:"applied", label:"Are people building on each other's AI work", sub:"How often shared prompts and AI resources get reused — a signal that skills are spreading across the org", vendors:[{n:"Microsoft 365",w:"SharePoint or Teams wiki with usage tracking — Power BI dashboard on top."},{n:"Any stack",w:"Notion, Confluence, or any knowledge base — needs a logged reuse count per prompt."}], roi:"A shared prompt library got used over 2,200 times in one quarter — an estimated $176K in recovered time.", steps:[{t:"Build a library that counts reuse, not just stores prompts",d:"Without a reuse counter, it's a resource, not a measurement."},{t:"Ask authors to estimate ROI at submission",d:"Task type, time saved per use, which roles benefit."},{t:"Report the top 10 prompts by time saved each month",d:"Total time recovered, reuse velocity, new submissions."},{t:"Feed the highest-performing prompts back into training",d:"Belong in onboarding and role-based training."},{t:"Report as shared infrastructure ROI",d:"One prompt reused 2,200 times beats 100 used once each."}] },
+
+    { frame:"productivity", col:2, maturity:"applied", label:"How much time is saved per task, per role", sub:"Average task completion time before and after AI deployment, measured by role and task type", vendors:[{n:"Microsoft 365",w:"Viva Insights > Copilot Dashboard. Estimated hours saved per user per week by app."},{n:"Google Workspace",w:"Admin Console > Reports > Gemini usage. Time-in-docs and meeting summary metrics."}], roi:"A team went from spending 4 hours on a standard report to under 2 — across 40 people, that is $180K in time recovered annually.", steps:[{t:"Pick 3–5 high-frequency tasks",d:"Weekly tasks, not edge cases — cleaner before/after signal."},{t:"Pull the native dashboard estimate",d:"Viva or Gemini usage reports give this without extra instrumentation."},{t:"Cross-validate against a manual log sample",d:"Native estimates are directional — validate before presenting to Finance."},{t:"Convert to headcount equivalent",d:"Total hours saved ÷ 2,080 = FTE equivalent for the executive audience."}] },
+    { frame:"productivity", col:2, maturity:"operational", label:"How many recurring meetings disappeared", sub:"Reduction in status meeting hours after async AI summarization tools were deployed", vendors:[{n:"Microsoft 365",w:"Viva Insights > Collaboration habits — total meeting hours, % recurring, meeting size."},{n:"Google Workspace",w:"Admin Console > Reports > Meet — frequency and duration trends."}], roi:"90 days after deploying AI meeting summaries, recurring status meetings dropped 22% — a full workday per person per month back for a 200-person org.", steps:[{t:"Pull 4 weeks of meeting data before deploying async tools",d:"Total hours, % recurring, average attendee count."},{t:"Deploy async summarization and note the exact date",d:"Copilot recap, Teams transcription, Otter, or Fireflies."},{t:"Measure at 60 and 90 days",d:"Compare recurring meeting volume and % under 5 attendees."},{t:"Calculate time reclaimed",d:"Hours saved × headcount × 50 weeks = annual hours, × blended rate."}] },
+    { frame:"revenue", col:2, maturity:"operational", label:"Does AI improve customer service economics", sub:"Percentage of customer issues resolved without a human, and satisfaction scores vs. human-only service", vendors:[{n:"Zendesk",w:"Explore Analytics > AI tab — bot resolution rate, CSAT comparison, deflection rate."},{n:"Salesforce",w:"Einstein Analytics — AI case deflection and handling time with Einstein Bots."},{n:"Intercom",w:"Fin AI dashboard — resolution rate, CSAT comparison, deflection."}], roi:"AI handled 43% of Tier 1 support volume without a human — saving $340K per year while CSAT held steady.", steps:[{t:"Be precise about resolved vs. assisted",d:"Different cost profiles and CSAT implications — track separately."},{t:"Pull 8 weeks of pre-AI baseline data",d:"Handle time, first-contact resolution, CSAT, volume by category."},{t:"Track CSAT alongside deflection, not instead of it",d:"Rising deflection with falling CSAT is a real problem."}] },
+    { frame:"revenue", col:2, maturity:"operational", label:"Does AI compress the sales cycle", sub:"Average days from first contact to closed deal for AI-enabled reps vs. the same period prior", vendors:[{n:"Salesforce",w:"Reports > Opportunities > Days to close, segmented by rep and AI usage status."},{n:"HubSpot",w:"Sales Analytics > Deal velocity report, filtered by AI-assisted activity flags."},{n:"Gong",w:"Deal intelligence — AI call analysis linked to faster close and higher win rates."}], roi:"Reps using AI tools closed deals 34% faster — pulling forward $2.1M in revenue in one quarter.", steps:[{t:"Pull 12 months of deal cycle time from the CRM",d:"Segmented by rep, deal size, territory."},{t:"Tag which reps are actively using AI tools",d:"Match to comparable reps by tenure, quota, territory."},{t:"Compare deal velocity every 90 days",d:"Days to close, proposal turnaround, activity volume."}] },
+    { frame:"capability", col:2, maturity:"literate", label:"Are licensed AI tools being actively used", sub:"How many licensed seats are in active use, and where the gaps are by team and function", vendors:[{n:"Microsoft 365",w:"Admin Center > Reports > Copilot Usage — active users, feature usage, seat utilization."},{n:"Google Workspace",w:"Admin Console > Reports > Gemini — active users and adoption rate by org unit."},{n:"Any LLM platform",w:"Admin dashboards show MAU by workspace — compare against procurement seat count."}], roi:"An audit found 38% of seats sitting unused — reclaiming them saved $180K and redirected budget to training.", steps:[{t:"Pull monthly active users for every AI tool",d:"Compare purchased seats vs. active users at 30/60/90 days."},{t:"Define active as behavior, not login",d:"At least 3 sessions and 1 substantive output per month."},{t:"Find the root cause before cutting seats",d:"Low usage usually means a training gap, not waste."}] },
+    { frame:"capability", col:2, maturity:"transformational", label:"How fast do new hires get up to speed with AI", sub:"Days from start date to full performance for AI-assisted onboarding cohorts vs. prior hires", vendors:[{n:"Workday",w:"Time-to-productivity tracking against role benchmarks, compared across cohorts."},{n:"Any HRIS",w:"Combine hire date with first performance milestone — delta is ramp time."}], roi:"New hires with AI-assisted onboarding reached full productivity in 5.5 weeks instead of 9 — $180K saved per 20-person intake class.", steps:[{t:"Define full productivity per role before the cohort starts",d:"Quota attainment, tickets resolved, code merged."},{t:"Give new hires AI tools from day one",d:"Curated prompts, workflow guides, foundational training."},{t:"Track the date each hire hits the benchmark",d:"Compare against the prior 2-3 intake classes."}] },
+
+    { frame:"productivity", col:3, maturity:"transformational", label:"How does AI output volume translate to headcount capacity", sub:"AI output modeled as FTE equivalent — quantifies avoided hiring cost without reducing headcount", vendors:[{n:"Any LLM platform",w:"Token cost ÷ output volume = cost per unit. Compare to fully loaded human cost per unit."},{n:"GitHub",w:"Lines of AI-assisted code merged per developer per week."},{n:"Any BI tool",w:"Cross-system model combining time-log delta + token cost + cycle time. Finance should co-own it."}], roi:"The AI program created the output equivalent of 18 additional people — without a single new hire. Avoided $3.2M in annual cost.", steps:[{t:"Start with tasks that already have time benchmarks",d:"High-volume tasks with known durations become the output units."},{t:"Scale to annual hours freed",d:"Time saved × frequency × people ÷ 2,080 = FTE equivalent."},{t:"Cross-check against LLM cost data",d:"Both methods should converge — if they diverge, find out why first."},{t:"Present with total program cost in the denominator",d:"A model that only counts benefits will be challenged immediately."}] },
+    { frame:"quality", col:3, maturity:"transformational", label:"Can the org defend AI-assisted decisions to regulators", sub:"Logged record of AI-assisted decisions — reduces audit time and legal exposure in regulated industries", vendors:[{n:"Azure OpenAI",w:"Azure Monitor — full prompt/response logging, integrates with Purview compliance."},{n:"Any LLM platform",w:"Prompt and response logging via API — store in your SIEM with tamper-evident logging."},{n:"ServiceNow",w:"Governance, Risk and Compliance module logs decisions with review action and timestamp."}], roi:"After implementing AI decision logging, compliance review time dropped 40% — 600 hours per year saved.", steps:[{t:"Identify which decisions need a trail",d:"Loan approvals, HR actions, medical triage, compliance filings."},{t:"Log four things for every covered decision",d:"What was prompted, model version, output, human review action, timestamp, user ID."},{t:"Build a retrieval interface auditors can actually use",d:"A searchable UI is required — raw log files are not acceptable."}] },
+    { frame:"revenue", col:3, maturity:"transformational", label:"Do AI-assisted ideas reach production and generate revenue", sub:"Revenue traced to product features or initiatives that originated from AI-assisted ideation", vendors:[{n:"Salesforce",w:"Opportunity source field tracks feature-influenced revenue for AI-originated features."},{n:"Jira",w:"An 'AI-originated' flag on backlog items, tracked through to launch."},{n:"Any BI tool",w:"A funnel: ideas tagged → features shipped → revenue attributed in CRM."}], roi:"Three features from AI brainstorming sessions shipped last quarter and are associated with $1.2M in new pipeline.", steps:[{t:"Tag AI-originated ideas at submission, not later",d:"Retroactive tagging introduces bias and will be questioned."},{t:"Follow each idea through every stage",d:"Submitted → approved → in development → shipped → revenue attributed."},{t:"Apply the attribution model Finance already trusts",d:"MQL influence, ARR from launches, or NRR improvement."}] },
+    { frame:"capability", col:3, maturity:"transformational", label:"Does token spend reflect improving skill over time", sub:"LLM API cost per unit of output — tracks prompting skill development without any formal assessment", vendors:[{n:"Anthropic",w:"Console > Usage — token consumption by workspace, project, API key."},{n:"Azure OpenAI",w:"Azure Monitor metrics, full integration with Cost Management."}], roi:"Token cost per output dropped 34% over 12 weeks after training — same quality, lower compute cost.", steps:[{t:"Tag token usage by team and workflow",d:"Without tagging, reporting is limited to total org spend."},{t:"Track cost per output, not total spend",d:"Cost per unit should decrease as prompting skill improves."},{t:"Track the trend monthly for 12 weeks",d:"Rising volume at stable or declining cost = improving skill."}] }
+  ];
+
+  var INTENTS = [
+    { id:"prove_productivity", icon:"⏱", label:"Prove AI is making the workforce more productive", owner:"CLO · COO · CHRO", primary:["How much time is saved per task, per role","Does AI actually change how work gets done","How does AI output volume translate to headcount capacity"], secondary:["Have you used an AI-augmented workflow this week?","Does token spend reflect improving skill over time"], summary:"Combine a concrete time-saved number with the FTE capacity equivalent — the language CFOs and COOs recognize." },
+    { id:"prove_skills", icon:"📈", label:"Prove AI training changed behavior, not just awareness", owner:"CLO · CHRO · Board", primary:["Do skill scores improve measurably after training","Are people building on each other's AI work"], secondary:["How much time is saved per task, per role","Does token spend reflect improving skill over time"], summary:"A before/after skills score that is observed, not self-reported, plus a system signal showing usage changed." },
+    { id:"prove_ops_cost", icon:"💰", label:"Prove AI is reducing operational costs, not just adding tools", owner:"COO · CFO · CIO", primary:["Does AI actually change how work gets done","Does AI improve customer service economics","Are licensed AI tools being actively used"], secondary:["How much time is saved per task, per role","Does token spend reflect improving skill over time"], summary:"Process efficiency from a ticketing system plus spend efficiency from license utilization and token cost." },
+    { id:"prove_revenue", icon:"📊", label:"Connect the AI program to business growth", owner:"CEO · CRO · Board", primary:["Does AI improve customer service economics","Does AI compress the sales cycle","Do AI-assisted ideas reach production and generate revenue"], secondary:["Did AI help you move this deal or interaction forward faster?","Has output quality improved since AI deployment"], summary:"Start with the most direct signal a CRO already tracks — support deflection or sales cycle compression." },
+    { id:"prove_quality", icon:"✓", label:"Prove AI is improving work quality and not creating risk", owner:"CLO · GC · CISO", primary:["How accurate are AI outputs going into production","Has output quality improved since AI deployment","Can the org defend AI-assisted decisions to regulators"], secondary:["Do you trust the AI output enough to use it without double-checking?","Do skill scores improve measurably after training"], summary:"Accuracy monitoring for the ongoing signal, blind scoring for the comparison, audit trail for the GC." },
+    { id:"prove_adoption", icon:"🚀", label:"Show the AI rollout is actually sticking across the org", owner:"CLO · CIO · CEO", primary:["Are licensed AI tools being actively used","How prepared is the workforce before training begins","Have you used an AI-augmented workflow this week?"], secondary:["Does AI actually change how work gets done","Are people building on each other's AI work"], summary:"License utilization is the most auditable signal — Nudge data shows early direction before it's fully instrumented." }
+  ];
+
+  var state = { activeIntent: null, hl: {}, goal: null };
+
+  function buildTierLegend() {
+    var wrap = document.getElementById('tierlegend');
+    wrap.innerHTML = '';
+    TIERS.forEach(function(t, i) {
+      var d = document.createElement('div');
+      d.className = 'tl';
+      d.style.borderColor = t.color;
+      d.innerHTML = '<div class="n" style="color:' + t.color + '">Tier ' + i + ' · ' + t.name + '</div><div class="s">' + t.sub + '</div>';
+      wrap.appendChild(d);
+    });
+  }
+
+  function buildIntentCards() {
+    var wrap = document.getElementById('icards');
+    wrap.innerHTML = '';
+    INTENTS.forEach(function(i) {
+      var d = document.createElement('div');
+      d.className = 'icard' + (state.activeIntent === i.id ? ' active' : '');
+      d.innerHTML = '<span class="ic">' + i.icon + '</span><div><div class="it">' + i.label + '</div><div class="io">' + i.owner + '</div></div>';
+      d.addEventListener('click', function() { pick(i); });
+      wrap.appendChild(d);
+    });
+  }
+
+  function pick(i) {
+    state.activeIntent = i.id;
+    state.hl = {};
+    i.primary.forEach(function(l){ state.hl[l] = 'primary'; });
+    i.secondary.forEach(function(l){ state.hl[l] = 'secondary'; });
+    state.goal = { title: i.label, summary: i.summary };
+    document.getElementById('finput').value = '';
+    var rb = document.getElementById('recbar');
+    rb.style.display = 'block';
+    rb.innerHTML = '<b>' + i.label + '</b><br>' + i.summary;
+    render();
+  }
+
+  async function runAI() {
+    var q = document.getElementById('finput').value.trim();
+    if (!q) return;
+    state.activeIntent = null;
+    var btn = document.getElementById('abtn'), ld = document.getElementById('loading');
+    btn.disabled = true; ld.style.display = 'block';
+    document.getElementById('recbar').style.display = 'none';
+    state.hl = {}; render();
+    var labels = cells.map(function(c){ return c.label; }).join(', ');
+    var prompt = 'You are an AI ROI measurement expert advising enterprise CLOs and CHROs. A client said: "' + q + '". Available measurement methods: ' + labels + '. Return ONLY valid JSON: {"primary":["method1","method2","method3"],"secondary":["method4","method5"],"summary":"2-3 sentences explaining why these methods build the strongest evidence package for this objective."} Use exact method names from the list. No other text.';
+    try {
+      var r = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 800, messages: [{ role: 'user', content: prompt }] })
+      });
+      var data = await r.json();
+      var txt = (data.content || []).filter(function(b){ return b.type === 'text'; }).map(function(b){ return b.text; }).join('');
+      var parsed = JSON.parse(txt.replace(/```json|```/g, '').trim());
+      parsed.primary.forEach(function(l){ state.hl[l] = 'primary'; });
+      parsed.secondary.forEach(function(l){ state.hl[l] = 'secondary'; });
+      state.goal = { title: q, summary: parsed.summary };
+      var rb = document.getElementById('recbar');
+      rb.style.display = 'block';
+      rb.innerHTML = '<b>Methods for: "' + q + '"</b><br>' + parsed.summary;
+    } catch (e) {
+      var rb2 = document.getElementById('recbar');
+      rb2.style.display = 'block';
+      rb2.innerHTML = 'Try rephrasing the objective, or select one of the cards above.';
+      state.goal = null;
+    }
+    btn.disabled = false; ld.style.display = 'none';
+    render();
+  }
+
+  function clearAll() {
+    state = { activeIntent: null, hl: {}, goal: null };
+    document.getElementById('finput').value = '';
+    document.getElementById('recbar').style.display = 'none';
+    document.getElementById('detail').style.display = 'none';
+    render();
+  }
+
+  function buildColHeads() {
+    var wrap = document.getElementById('colheads');
+    wrap.innerHTML = '';
+    Object.keys(FRAMES).forEach(function(fk) {
+      var fr = FRAMES[fk];
+      var d = document.createElement('div');
+      d.className = 'colhead';
+      d.style.borderColor = fr.color; d.style.color = fr.color;
+      d.innerHTML = fr.name + '<span class="own">' + fr.owner + '</span>';
+      wrap.appendChild(d);
+    });
+  }
+
+  function renderBoard() {
+    var board = document.getElementById('board');
+    board.innerHTML = '';
+    var hasGoal = !!state.goal && Object.keys(state.hl).length > 0;
+    Object.keys(FRAMES).forEach(function(fk) {
+      var col = document.createElement('div');
+      col.className = 'tiercol';
+      [3, 2, 1, 0].forEach(function(tier) {
+        var tierCells = cells.filter(function(c){ return c.frame === fk && c.col === tier; });
+        tierCells.forEach(function(c) {
+          var hl = state.hl[c.label];
+          var dim = hasGoal && !hl;
+          var div = document.createElement('div');
+          div.className = 'cell' + (dim ? ' dim' : '') + (hl === 'primary' ? ' primary' : '') + (hl === 'secondary' ? ' secondary' : '') + (c.nudge ? ' nudge' : '');
+          div.style.borderLeftColor = TIERS[c.col].color;
+          div.id = 'cell-' + c.label.replace(/[^a-zA-Z0-9]/g, '_');
+          var badge = hl === 'primary' ? '<span class="badge">Primary</span>' : hl === 'secondary' ? '<span class="badge">Secondary</span>' : '';
+          div.innerHTML = badge + '<div class="lbl">' + c.label + '</div><div class="sub">' + c.sub + '</div><div class="taglist"><span class="ttag">Tier ' + c.col + ' · ' + TIERS[c.col].name + '</span><span class="ttag">GA: ' + MATURITY[c.maturity] + '</span></div>';
+          div.addEventListener('click', function(){ openDetail(c); });
+          col.appendChild(div);
+        });
+      });
+      board.appendChild(col);
+    });
+    drawApexEdges();
+  }
+
+  function drawApexEdges() {
+    var svg = document.getElementById('apexlayer');
+    var wrap = document.querySelector('.pyramidwrap');
+    var wrapRect = wrap.getBoundingClientRect();
+    svg.setAttribute('width', wrapRect.width);
+    svg.setAttribute('height', wrapRect.height);
+    svg.innerHTML = '';
+    var apexEl = document.getElementById('apexcard');
+    if (!state.goal || !Object.keys(state.hl).length) { apexEl.style.display = 'none'; return; }
+    apexEl.style.display = 'block';
+    document.getElementById('apexTitle').textContent = state.goal.title;
+    document.getElementById('apexSummary').textContent = state.goal.summary;
+    var apexRect = apexEl.getBoundingClientRect();
+    var apexX = apexRect.left + apexRect.width / 2 - wrapRect.left;
+    var apexY = apexRect.bottom - wrapRect.top;
+    Object.keys(state.hl).forEach(function(label) {
+      var el = document.getElementById('cell-' + label.replace(/[^a-zA-Z0-9]/g, '_'));
+      if (!el) return;
+      var r = el.getBoundingClientRect();
+      var x = r.left + r.width / 2 - wrapRect.left, y = r.top - wrapRect.top;
+      var color = state.hl[label] === 'primary' ? '#5EE6FF' : '#F0A94E';
+      var midY = (y + apexY) / 2 - 200;
+      var p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      p.setAttribute('d', 'M ' + x + ' ' + y + ' Q ' + ((x + apexX) / 2) + ' ' + midY + ', ' + apexX + ' ' + apexY);
+      p.setAttribute('fill', 'none'); p.setAttribute('stroke', color);
+      p.setAttribute('stroke-width', state.hl[label] === 'primary' ? 1.6 : 1);
+      p.setAttribute('stroke-dasharray', state.hl[label] === 'primary' ? 'none' : '3 4');
+      p.setAttribute('opacity', 0.55);
+      svg.appendChild(p);
+    });
+  }
+
+  function openDetail(c) {
+    var fr = FRAMES[c.frame];
+    var d = document.getElementById('detail');
+    d.style.display = 'block';
+    var sc = c.vendors.map(function(v){ return '<div class="scard"><div class="n">' + v.n + '</div><div class="w">' + v.w + '</div></div>'; }).join('');
+    var steps = c.steps.map(function(s, i){ return '<div class="step"><div class="snum">' + (i+1) + '</div><div><div class="st">' + s.t + '</div><div class="sd">' + s.d + '</div></div></div>'; }).join('');
+    d.innerHTML = '<button class="close" onclick="document.getElementById(\'detail\').style.display=\'none\'">Close</button>' +
+      '<h2>' + c.label + '</h2>' +
+      '<div class="roi">"' + c.roi + '"</div>' +
+      '<div class="tags"><span class="tag" style="border-color:' + fr.color + '; color:' + fr.color + '">' + fr.name + '</span><span class="tag" style="border-color:' + TIERS[c.col].color + '; color:' + TIERS[c.col].color + '">Tier ' + c.col + ' · ' + TIERS[c.col].name + '</span><span class="tag">GA stage: ' + MATURITY[c.maturity] + '</span></div>' +
+      '<div class="stacktitle">Where this data lives in your stack</div>' +
+      '<div class="stackgrid">' + sc + '</div>' +
+      '<div class="stacktitle">Implementation steps</div>' + steps;
+    d.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function render() {
+    buildIntentCards();
+    renderBoard();
+  }
+
+  document.getElementById('finput').addEventListener('keydown', function(e){ if (e.key === 'Enter') runAI(); });
+  buildTierLegend();
+  buildColHeads();
+  render();
+  window.addEventListener('resize', drawApexEdges);
+</script>

@@ -1,0 +1,184 @@
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Michroma&family=Rajdhani:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #030507; font-family: 'Rajdhani', sans-serif; color: #E7EEF2; }
+  :root { --cyan: #5EE6FF; --amber: #F0A94E; --sub: #6E8790; --line: rgba(94,230,255,0.14); }
+  .switcher { display: flex; gap: 6px; padding: 14px; }
+  .switcher button { flex: 1; padding: 10px 6px; font-size: 11px; font-family: 'JetBrains Mono', monospace; border: 1px solid #253038; background: #10151A; color: var(--sub); cursor: pointer; letter-spacing: 0.04em; }
+  .switcher button.active { background: var(--cyan); color: #07090B; border-color: var(--cyan); font-weight: 600; }
+
+  .stage { min-height: 700px; padding: 10px 28px 34px; background: #030507;
+    background-image: linear-gradient(rgba(94,230,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(94,230,255,0.03) 1px, transparent 1px);
+    background-size: 26px 26px; }
+  .layer { display: none; }
+  .layer.active { display: block; }
+
+  .head { text-align: center; padding: 16px 0 10px; }
+  .head h1 { font-family: 'Michroma', sans-serif; font-size: 16px; margin: 0; letter-spacing: 0.04em; }
+  .head h1 span { color: var(--cyan); }
+  .statrow { display: flex; justify-content: center; gap: 26px; margin-top: 10px; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--sub); letter-spacing: 0.05em; }
+  .statrow b { color: var(--cyan); font-weight: 600; }
+
+  .bp { position: relative; background: rgba(16,21,26,0.7); border: 1px solid var(--line); }
+  .c { position: absolute; width: 11px; height: 11px; border-color: var(--cyan); opacity: 0.75; }
+  .c.tl { top: -1px; left: -1px; border-top: 1.5px solid; border-left: 1.5px solid; }
+  .c.tr { top: -1px; right: -1px; border-top: 1.5px solid; border-right: 1.5px solid; }
+  .c.bl { bottom: -1px; left: -1px; border-bottom: 1.5px solid; border-left: 1.5px solid; }
+  .c.br { bottom: -1px; right: -1px; border-bottom: 1.5px solid; border-right: 1.5px solid; }
+  .chip { font-family: 'JetBrains Mono', monospace; font-size: 8px; letter-spacing: 0.03em; padding: 2px 6px; border: 1px solid rgba(94,230,255,0.35); color: var(--cyan); background: rgba(94,230,255,0.06); text-transform: uppercase; }
+
+  /* ---------- WORKFLOWS BOARD ---------- */
+  .board { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 20px; }
+  .col-head { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--sub); padding: 10px 12px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; }
+  .col-head b { color: var(--cyan); }
+  .col-sub { font-family: 'JetBrains Mono', monospace; font-size: 8px; color: #45585e; padding: 4px 12px 10px; border-bottom: 1px solid var(--line); text-transform: uppercase; letter-spacing: 0.04em; }
+  .wcard { margin: 10px; padding: 11px 12px; border: 1px solid rgba(94,230,255,0.14); background: rgba(94,230,255,0.02); }
+  .wcard .nm { font-size: 13px; font-weight: 600; color: #EAF6F8; margin-bottom: 3px; }
+  .wcard .dept { font-family: 'JetBrains Mono', monospace; font-size: 8.5px; color: var(--sub); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 8px; }
+  .wcard .tasks { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #9FB6BC; margin-bottom: 8px; }
+  .wcard .tasks b { color: var(--cyan); }
+  .wcard .track { height: 4px; background: rgba(94,230,255,0.1); position: relative; margin-bottom: 4px; }
+  .wcard .track i { position: absolute; left: 0; top: 0; height: 100%; background: var(--cyan); }
+  .wcard .track .thresh { position: absolute; top: -3px; width: 1px; height: 10px; background: var(--amber); }
+  .wcard .pctlbl { display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace; font-size: 8.5px; color: var(--sub); }
+  .wcard .pctlbl b { color: var(--cyan); }
+  .wcard.paved { border-color: rgba(94,230,255,0.3); }
+  .wcard .paved-tag { font-family: 'JetBrains Mono', monospace; font-size: 8px; color: var(--amber); margin-top: 6px; }
+
+  /* ---------- INTERVENTIONS ---------- */
+  .itype { margin-top: 20px; }
+  .itype-head { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+  .itype-head .t { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: #EAF6F8; }
+  .itype-head .n { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--cyan); }
+  .irow { display: grid; grid-template-columns: 1.6fr 1fr 1fr 1fr 0.6fr; gap: 10px; align-items: center; padding: 10px 14px; border-bottom: 1px solid rgba(94,230,255,0.06); font-size: 12px; }
+  .irow .ti { color: #D7E6E9; }
+  .irow .fmt { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: var(--sub); text-transform: uppercase; }
+  .irow .lk { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #9FB6BC; }
+  .irow .dt { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: var(--sub); }
+  .irow .att { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--cyan); text-align: right; }
+  .newbtn { font-family: 'JetBrains Mono', monospace; font-size: 10px; padding: 8px 16px; background: transparent; border: 1px solid rgba(94,230,255,0.4); color: var(--cyan); clip-path: polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px); cursor: pointer; text-transform: uppercase; float: right; margin: 14px 20px 0 0; }
+</style>
+
+<div class="switcher">
+  <button class="active" data-l="w">Workflows</button>
+  <button data-l="i">Interventions</button>
+</div>
+
+<div class="stage">
+
+  <!-- WORKFLOWS -->
+  <div class="layer active" id="l-w">
+    <div class="head">
+      <h1>WORKFLOW SCALE-UP / <span>AIM</span></h1>
+      <div class="statrow">
+        <div>IDENTIFIED <b>24</b></div>
+        <div>AUGMENTED <b>14</b></div>
+        <div>PILOTING <b>8</b></div>
+        <div>STANDARDIZED <b>5</b></div>
+      </div>
+    </div>
+
+    <div class="board">
+      <div class="bp"><div class="c tl"></div><div class="c br"></div>
+        <div class="col-head">1 · Identified<b>24</b></div>
+        <div class="col-sub">Flagged high-value, broken into tasks</div>
+        <div class="wcard"><div class="nm">Client renewal risk scoring</div><div class="dept">Sales</div><div class="tasks"><b>5</b> tasks identified</div></div>
+        <div class="wcard"><div class="nm">Meeting notes summarization</div><div class="dept">Operations</div><div class="tasks"><b>3</b> tasks identified</div></div>
+        <div class="wcard"><div class="nm">Expense report coding</div><div class="dept">Finance</div><div class="tasks"><b>4</b> tasks identified</div></div>
+      </div>
+
+      <div class="bp"><div class="c tl"></div><div class="c br"></div>
+        <div class="col-head">2 · Augmented<b>14</b></div>
+        <div class="col-sub">Tasks designed with AI assist</div>
+        <div class="wcard"><div class="nm">Sales proposal drafting</div><div class="dept">Sales</div><div class="tasks"><b>3</b> of 5 tasks augmented</div></div>
+        <div class="wcard"><div class="nm">Incident report triage</div><div class="dept">Engineering</div><div class="tasks"><b>4</b> of 4 tasks augmented</div></div>
+      </div>
+
+      <div class="bp"><div class="c tl"></div><div class="c br"></div>
+        <div class="col-head">3 · Piloting<b>8</b></div>
+        <div class="col-sub">Dirt path forming — usage tracked</div>
+        <div class="wcard">
+          <div class="nm">Support ticket first-response</div><div class="dept">Support</div>
+          <div class="tasks">Usage vs. <span style="color:var(--amber)">60%</span> threshold</div>
+          <div class="track"><i style="width:47%"></i><span class="thresh" style="left:60%"></span></div>
+          <div class="pctlbl"><span>0%</span><b>47%</b><span>100%</span></div>
+        </div>
+        <div class="wcard">
+          <div class="nm">Code review summarization</div><div class="dept">Engineering</div>
+          <div class="tasks">Usage vs. <span style="color:var(--amber)">60%</span> threshold</div>
+          <div class="track"><i style="width:68%"></i><span class="thresh" style="left:60%"></span></div>
+          <div class="pctlbl"><span>0%</span><b>68% — ready to pave</b><span>100%</span></div>
+        </div>
+      </div>
+
+      <div class="bp"><div class="c tl"></div><div class="c br"></div>
+        <div class="col-head">4 · Standard<b>5</b></div>
+        <div class="col-sub">Paved — required, tracked for compliance</div>
+        <div class="wcard paved">
+          <div class="nm">Sales call summarization</div><div class="dept">Sales</div>
+          <div class="tasks">Compliance</div>
+          <div class="track"><i style="width:91%"></i></div>
+          <div class="pctlbl"><span></span><b>91%</b><span></span></div>
+          <div class="paved-tag">Required since Aug 12</div>
+        </div>
+        <div class="wcard paved">
+          <div class="nm">Job description drafting</div><div class="dept">HR</div>
+          <div class="tasks">Compliance</div>
+          <div class="track"><i style="width:78%"></i></div>
+          <div class="pctlbl"><span></span><b>78%</b><span></span></div>
+          <div class="paved-tag">Required since Jul 30</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INTERVENTIONS -->
+  <div class="layer" id="l-i">
+    <div class="head">
+      <h1>INTERVENTION PLANNER / <span>AIM</span></h1>
+      <div class="statrow">
+        <div>PLANNED <b>6</b></div>
+        <div>COMPLETED <b>12</b></div>
+        <div>AVG ATTENDANCE <b>14</b></div>
+        <div>LINKED WORKFLOWS <b>9</b></div>
+      </div>
+    </div>
+    <button class="newbtn">+ New intervention</button>
+
+    <div class="itype bp"><div class="c tl"></div><div class="c br"></div>
+      <div class="itype-head"><span class="t">Training moments (ILT / VILT)</span><span class="n">2 planned</span></div>
+      <div class="irow"><span class="ti">Prompting for sales proposals</span><span class="fmt">Virtual · VILT</span><span class="lk">Sales · Sales proposal drafting</span><span class="dt">Oct 14</span><span class="att">22</span></div>
+      <div class="irow"><span class="ti">Incident triage with AI copilots</span><span class="fmt">In-person · ILT</span><span class="lk">Engineering · Incident triage</span><span class="dt">Oct 21</span><span class="att">16</span></div>
+    </div>
+
+    <div class="itype bp"><div class="c tl"></div><div class="c br"></div>
+      <div class="itype-head"><span class="t">Casual collisions</span><span class="n">1 planned</span></div>
+      <div class="irow"><span class="ti">Peer pairing: J. Ellis × T. Bradley</span><span class="fmt">In-person</span><span class="lk">Engineering</span><span class="dt">Oct 9</span><span class="att">2</span></div>
+    </div>
+
+    <div class="itype bp"><div class="c tl"></div><div class="c br"></div>
+      <div class="itype-head"><span class="t">Sustainment sessions</span><span class="n">1 planned</span></div>
+      <div class="irow"><span class="ti">Monthly AI champions webinar</span><span class="fmt">Virtual</span><span class="lk">All departments</span><span class="dt">Oct 30</span><span class="att">40</span></div>
+    </div>
+
+    <div class="itype bp"><div class="c tl"></div><div class="c br"></div>
+      <div class="itype-head"><span class="t">Role-based trainings</span><span class="n">2 planned</span></div>
+      <div class="irow"><span class="ti">Finance workflow identification workshop</span><span class="fmt">In-person</span><span class="lk">Finance</span><span class="dt">Nov 4</span><span class="att">12</span></div>
+      <div class="irow"><span class="ti">HR: spotting high-value tasks</span><span class="fmt">Virtual</span><span class="lk">HR</span><span class="dt">Nov 11</span><span class="att">9</span></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  document.querySelectorAll('.switcher button').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      document.querySelectorAll('.switcher button').forEach(function(b){ b.classList.remove('active'); });
+      document.querySelectorAll('.layer').forEach(function(l){ l.classList.remove('active'); });
+      btn.classList.add('active');
+      document.getElementById('l-' + btn.dataset.l).classList.add('active');
+    });
+  });
+</script>

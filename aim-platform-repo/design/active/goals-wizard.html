@@ -1,0 +1,266 @@
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Michroma&family=Rajdhani:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #030507; font-family: 'Rajdhani', sans-serif; color: #E7EEF2; }
+  :root { --cyan: #5EE6FF; --amber: #F0A94E; --sub: #6E8790; --line: rgba(94,230,255,0.14); }
+  .stage { min-height: 700px; padding: 30px 30px 40px; background: #030507;
+    background-image: linear-gradient(rgba(94,230,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(94,230,255,0.03) 1px, transparent 1px);
+    background-size: 26px 26px; max-width: 900px; margin: 0 auto; }
+
+  .head { text-align: center; padding: 4px 0 6px; }
+  .head h1 { font-family: 'Michroma', sans-serif; font-size: 16px; margin: 0; letter-spacing: 0.04em; }
+  .head h1 span { color: var(--cyan); }
+  .head p { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: var(--sub); margin: 8px 0 0; }
+
+  .steps { display: flex; justify-content: center; gap: 0; margin: 22px 0 26px; }
+  .steps .s { display: flex; align-items: center; }
+  .steps .n { width: 26px; height: 26px; border-radius: 50%; border: 1.5px solid #2a3a40; display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--sub); flex-shrink: 0; }
+  .steps .n.on { border-color: var(--cyan); color: var(--cyan); box-shadow: 0 0 6px rgba(94,230,255,0.4); }
+  .steps .n.done { background: var(--cyan); border-color: var(--cyan); color: #07090B; }
+  .steps .lbl { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--sub); margin: 0 10px; }
+  .steps .lbl.on { color: #EAF6F8; }
+  .steps .bar { width: 40px; height: 1px; background: #2a3a40; }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  .bp { position: relative; background: rgba(16,21,26,0.7); border: 1px solid var(--line); }
+  .c { position: absolute; width: 11px; height: 11px; border-color: var(--cyan); opacity: 0.75; }
+  .c.tl { top: -1px; left: -1px; border-top: 1.5px solid; border-left: 1.5px solid; }
+  .c.tr { top: -1px; right: -1px; border-top: 1.5px solid; border-right: 1.5px solid; }
+  .c.bl { bottom: -1px; left: -1px; border-bottom: 1.5px solid; border-left: 1.5px solid; }
+  .c.br { bottom: -1px; right: -1px; border-bottom: 1.5px solid; border-right: 1.5px solid; }
+
+  /* step 1: use case grid */
+  .filterrow { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+  .filterrow button { font-family: 'JetBrains Mono', monospace; font-size: 10px; padding: 6px 12px; background: #10151A; border: 1px solid #253038; color: var(--sub); cursor: pointer; text-transform: uppercase; }
+  .filterrow button.on { background: var(--cyan); color: #07090B; border-color: var(--cyan); font-weight: 600; }
+  .ucgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .uc { padding: 14px; cursor: pointer; transition: border-color 0.1s; }
+  .uc:hover { border-color: rgba(94,230,255,0.5); }
+  .uc .nm { font-size: 13.5px; font-weight: 600; color: #EAF6F8; margin-bottom: 6px; }
+  .uc .desc { font-size: 11.5px; color: #9FB6BC; line-height: 1.4; margin-bottom: 10px; }
+  .uc .tags { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip { font-family: 'JetBrains Mono', monospace; font-size: 7.5px; letter-spacing: 0.03em; padding: 2px 6px; border: 1px solid rgba(94,230,255,0.35); color: var(--cyan); text-transform: uppercase; }
+  .chip.amber { border-color: rgba(240,169,78,0.5); color: var(--amber); }
+
+  /* step 2: goal builder */
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--sub); margin-bottom: 6px; }
+  .field .prefix { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--amber); margin-bottom: 4px; }
+  .field textarea, .field input { width: 100%; background: #0a1116; border: 1px solid var(--line); color: #EAF6F8; padding: 9px 11px; font-family: 'Rajdhani', sans-serif; font-size: 13.5px; resize: vertical; }
+  .preview { margin-top: 20px; padding: 16px; border: 1px solid rgba(94,230,255,0.25); background: rgba(94,230,255,0.04); }
+  .preview .lbl { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--sub); margin-bottom: 8px; }
+  .preview .sentence { font-size: 15px; line-height: 1.6; color: #D7E6E9; }
+  .preview .sentence b { color: var(--cyan); font-weight: 600; }
+
+  /* step 3: measurement */
+  .mgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .mcard { padding: 14px; cursor: pointer; }
+  .mcard.on { border-color: var(--cyan); background: rgba(94,230,255,0.05); }
+  .mcard .mh { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .mcard .nm { font-size: 13px; font-weight: 600; color: #EAF6F8; }
+  .mcard .check { width: 16px; height: 16px; border: 1.5px solid #2a3a40; }
+  .mcard.on .check { background: var(--cyan); border-color: var(--cyan); }
+  .mcard .desc { font-size: 11px; color: #9FB6BC; line-height: 1.5; }
+  .mcard .src { font-family: 'JetBrains Mono', monospace; font-size: 8.5px; color: var(--amber); margin-top: 8px; text-transform: uppercase; }
+
+  /* step 4: summary */
+  .summary { padding: 22px; }
+  .summary .badge-row { display: flex; gap: 8px; margin-bottom: 14px; }
+  .summary .sentence { font-size: 16px; line-height: 1.7; color: #D7E6E9; margin-bottom: 18px; }
+  .summary .sentence b { color: var(--cyan); }
+  .summary .mrow { display: flex; justify-content: space-between; padding: 8px 0; border-top: 1px solid var(--line); font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+  .summary .mrow span:last-child { color: var(--cyan); }
+
+  .navrow { display: flex; justify-content: space-between; margin-top: 24px; }
+  .btn { font-family: 'JetBrains Mono', monospace; font-size: 11px; padding: 10px 20px; background: transparent; border: 1px solid rgba(94,230,255,0.4); color: var(--cyan); clip-path: polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px); cursor: pointer; text-transform: uppercase; }
+  .btn.solid { background: var(--cyan); color: #07090B; font-weight: 600; }
+  .btn.ghost { border-color: #2a3a40; color: var(--sub); }
+</style>
+
+<div class="stage">
+  <div class="head">
+    <h1>USE CASES / <span>TRANSFORMATION GOALS</span></h1>
+    <p>IDENTIFY → GOAL-SET → MEASURE</p>
+  </div>
+
+  <div class="steps">
+    <div class="s"><div class="n on" id="dot1">1</div><span class="lbl on" id="lbl1">Use case</span></div>
+    <div class="bar"></div>
+    <div class="s"><div class="n" id="dot2">2</div><span class="lbl" id="lbl2">Goal statement</span></div>
+    <div class="bar"></div>
+    <div class="s"><div class="n" id="dot3">3</div><span class="lbl" id="lbl3">Measurement</span></div>
+    <div class="bar"></div>
+    <div class="s"><div class="n" id="dot4">4</div><span class="lbl" id="lbl4">Confirm</span></div>
+  </div>
+
+  <!-- STEP 1 -->
+  <div class="panel active" id="p1">
+    <div class="filterrow">
+      <button class="on" data-f="all">All</button>
+      <button data-f="Productivity">Productivity</button>
+      <button data-f="Quality">Quality / risk</button>
+      <button data-f="Culture">Culture / retention</button>
+    </div>
+    <div class="ucgrid" id="ucgrid"></div>
+  </div>
+
+  <!-- STEP 2 -->
+  <div class="panel" id="p2">
+    <div class="bp" style="padding:20px;"><div class="c tl"></div><div class="c br"></div>
+      <div class="field">
+        <div class="prefix">Inform — the business will…</div>
+        <label>Action</label>
+        <textarea id="fAction" rows="2"></textarea>
+      </div>
+      <div class="field">
+        <div class="prefix">Invest / Inspire — by people who…</div>
+        <label>Resources</label>
+        <textarea id="fResources" rows="2" placeholder="e.g. complete role-based training and adopt the augmented workflow weekly"></textarea>
+      </div>
+      <div class="field">
+        <div class="prefix">Instill — to achieve…</div>
+        <label>Outcome</label>
+        <textarea id="fOutcome" rows="2" placeholder="e.g. a 20% reduction in first-response time"></textarea>
+      </div>
+      <div class="preview">
+        <div class="lbl">Transformation goal statement</div>
+        <div class="sentence" id="sentencePreview">The business will <b>…</b> by people who <b>…</b> to achieve <b>…</b></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 3 -->
+  <div class="panel" id="p3">
+    <div class="mgrid" id="mgrid"></div>
+  </div>
+
+  <!-- STEP 4 -->
+  <div class="panel" id="p4">
+    <div class="bp summary"><div class="c tl"></div><div class="c tr"></div><div class="c bl"></div><div class="c br"></div>
+      <div class="badge-row" id="sumBadges"></div>
+      <div class="sentence" id="sumSentence"></div>
+      <div id="sumMeasures"></div>
+    </div>
+  </div>
+
+  <div class="navrow">
+    <button class="btn ghost" id="backBtn" onclick="prevStep()">Back</button>
+    <button class="btn solid" id="nextBtn" onclick="nextStep()">Next</button>
+  </div>
+</div>
+
+<script>
+  var useCases = [
+    { id: 'uc1', name: 'Sales proposal drafting', cat: 'Productivity', desc: 'Draft first-pass client proposals using AI, cutting prep time for reps.', action: 'reduce proposal drafting time by 50% across the sales org' },
+    { id: 'uc2', name: 'Support first-response drafting', cat: 'Productivity', desc: 'AI drafts first-response replies to incoming support tickets.', action: 'cut first-response time on support tickets in half' },
+    { id: 'uc3', name: 'Incident report triage', cat: 'Quality', desc: 'AI classifies and prioritizes incoming engineering incident reports.', action: 'reduce incident misclassification and speed up triage' },
+    { id: 'uc4', name: 'Code review summarization', cat: 'Productivity', desc: 'AI summarizes large pull requests before human review.', action: 'shorten average code review turnaround time' },
+    { id: 'uc5', name: 'Job description drafting', cat: 'Culture', desc: 'AI drafts inclusive, consistent job descriptions for open roles.', action: 'standardize and speed up job description creation' },
+    { id: 'uc6', name: 'Client renewal risk scoring', cat: 'Quality', desc: 'AI flags at-risk accounts ahead of renewal conversations.', action: 'catch at-risk renewals earlier in the sales cycle' },
+    { id: 'uc7', name: 'Onboarding buddy matching', cat: 'Culture', desc: 'AI suggests peer pairings for new hire AI-adoption mentorship.', action: 'pair every new hire with an AI-fluent peer within week one' },
+    { id: 'uc8', name: 'Meeting notes summarization', cat: 'Productivity', desc: 'AI generates structured notes and action items from meetings.', action: 'eliminate manual meeting note-taking org-wide' },
+    { id: 'uc9', name: 'Expense report coding', cat: 'Quality', desc: 'AI pre-codes expense line items against GL categories.', action: 'cut expense report processing errors and turnaround time' }
+  ];
+
+  var measures = [
+    { id: 'workflow', name: 'Workflow adoption tracking', desc: 'Usage measured automatically as this use case moves through the Workflows pipeline (piloting → paved → compliance).', src: 'Source: Workflows tab' },
+    { id: 'nudge', name: 'Individual ROI via Nudges', desc: 'Short self-report prompts sent to people directly — "Did you use this AI-augmented workflow this week?"', src: 'Source: Nudges' },
+    { id: 'system', name: 'Backend system integration', desc: 'Pulled automatically from connected tools — token usage, API calls, time-in-tool telemetry.', src: 'Source: Connected systems' },
+    { id: 'survey', name: 'Readiness assessment delta', desc: 'Pre/post shift in Trust, Willingness, or Preparedness scores tied to this use case\u2019s department.', src: 'Source: Readiness' }
+  ];
+
+  var state = { step: 1, useCase: null, action: '', resources: '', outcome: '', selectedMeasures: [] };
+
+  function renderUseCases(filter) {
+    var grid = document.getElementById('ucgrid');
+    grid.innerHTML = '';
+    useCases.filter(function(u){ return filter === 'all' || u.cat === filter; }).forEach(function(u) {
+      var div = document.createElement('div');
+      div.className = 'bp uc';
+      div.innerHTML = '<div class="c tl"></div><div class="c br"></div><div class="nm">' + u.name + '</div><div class="desc">' + u.desc + '</div><div class="tags"><span class="chip' + (u.cat === 'Quality' ? ' amber' : '') + '">' + u.cat + '</span></div>';
+      div.addEventListener('click', function() {
+        state.useCase = u;
+        state.action = u.action;
+        nextStep();
+      });
+      grid.appendChild(div);
+    });
+  }
+  renderUseCases('all');
+
+  document.querySelectorAll('.filterrow button').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.filterrow button').forEach(function(b){ b.classList.remove('on'); });
+      btn.classList.add('on');
+      renderUseCases(btn.dataset.f);
+    });
+  });
+
+  function updatePreview() {
+    var a = document.getElementById('fAction').value || '…';
+    var r = document.getElementById('fResources').value || '…';
+    var o = document.getElementById('fOutcome').value || '…';
+    document.getElementById('sentencePreview').innerHTML = 'The business will <b>' + a + '</b> by people who <b>' + r + '</b> to achieve <b>' + o + '</b>';
+  }
+  document.getElementById('fAction').addEventListener('input', updatePreview);
+  document.getElementById('fResources').addEventListener('input', updatePreview);
+  document.getElementById('fOutcome').addEventListener('input', updatePreview);
+
+  function renderMeasures() {
+    var grid = document.getElementById('mgrid');
+    grid.innerHTML = '';
+    measures.forEach(function(m) {
+      var div = document.createElement('div');
+      div.className = 'bp mcard' + (state.selectedMeasures.indexOf(m.id) > -1 ? ' on' : '');
+      div.innerHTML = '<div class="c tl"></div><div class="c br"></div><div class="mh"><span class="nm">' + m.name + '</span><span class="check"></span></div><div class="desc">' + m.desc + '</div><div class="src">' + m.src + '</div>';
+      div.addEventListener('click', function() {
+        var i = state.selectedMeasures.indexOf(m.id);
+        if (i > -1) state.selectedMeasures.splice(i, 1); else state.selectedMeasures.push(m.id);
+        renderMeasures();
+      });
+      grid.appendChild(div);
+    });
+  }
+
+  function renderSummary() {
+    document.getElementById('sumBadges').innerHTML = '<span class="chip">' + (state.useCase ? state.useCase.cat : '') + '</span><span class="chip amber">' + (state.useCase ? state.useCase.name : '') + '</span>';
+    var a = document.getElementById('fAction').value || state.action;
+    var r = document.getElementById('fResources').value || '…';
+    var o = document.getElementById('fOutcome').value || '…';
+    document.getElementById('sumSentence').innerHTML = 'The business will <b>' + a + '</b> by people who <b>' + r + '</b> to achieve <b>' + o + '</b>';
+    var mhtml = '';
+    measures.filter(function(m){ return state.selectedMeasures.indexOf(m.id) > -1; }).forEach(function(m) {
+      mhtml += '<div class="mrow"><span>' + m.name + '</span><span>ACTIVE</span></div>';
+    });
+    document.getElementById('sumMeasures').innerHTML = mhtml || '<div class="mrow"><span>No measurement method selected</span><span>—</span></div>';
+  }
+
+  function goTo(step) {
+    state.step = step;
+    document.querySelectorAll('.panel').forEach(function(p){ p.classList.remove('active'); });
+    document.getElementById('p' + step).classList.add('active');
+    for (var i = 1; i <= 4; i++) {
+      var dot = document.getElementById('dot' + i), lbl = document.getElementById('lbl' + i);
+      dot.className = 'n' + (i < step ? ' done' : i === step ? ' on' : '');
+      dot.textContent = i < step ? '\u2713' : i;
+      lbl.className = 'lbl' + (i === step ? ' on' : '');
+    }
+    document.getElementById('backBtn').style.visibility = step === 1 ? 'hidden' : 'visible';
+    document.getElementById('nextBtn').textContent = step === 4 ? 'Create goal' : 'Next';
+    if (step === 2) { document.getElementById('fAction').value = state.action; updatePreview(); }
+    if (step === 3) renderMeasures();
+    if (step === 4) renderSummary();
+  }
+  function nextStep() {
+    if (state.step === 1 && !state.useCase) return;
+    if (state.step === 4) { alert('Transformation goal created (demo only).'); return; }
+    goTo(state.step + 1);
+  }
+  function prevStep() { if (state.step > 1) goTo(state.step - 1); }
+
+  goTo(1);
+</script>

@@ -1,0 +1,147 @@
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Barlow+Condensed:wght@300;500;600&family=Space+Grotesk:wght@400;500;600&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #07090B; }
+  :root { --cyan: #5EE6FF; --amber: #F0A94E; --sub: #6E8790; --line: rgba(94,230,255,0.12); --panel: rgba(16,21,26,0.7); }
+
+  .switcher { display: flex; gap: 6px; padding: 14px; flex-wrap: wrap; }
+  .switcher button { flex: 1; min-width: 150px; padding: 10px 6px; font-size: 11px; font-family: 'JetBrains Mono', monospace; border: 1px solid #253038; background: #10151A; color: #6E8790; cursor: pointer; }
+  .switcher button.active { background: var(--cyan); color: #07090B; border-color: var(--cyan); font-weight: 600; }
+
+  .stage { min-height: 560px; background: #07090B;
+    background-image: linear-gradient(rgba(94,230,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(94,230,255,0.03) 1px, transparent 1px);
+    background-size: 26px 26px; }
+  .layer { display: none; color: #E7EEF2; }
+  .layer.active { display: block; }
+
+  .status { display: flex; justify-content: space-between; padding: 8px 22px; border-bottom: 1px solid var(--line); color: var(--sub); }
+  .live { display: flex; align-items: center; gap: 7px; color: var(--cyan); }
+  .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 6px 1px rgba(94,230,255,.7); }
+  .crumb { padding: 12px 24px; color: var(--sub); border-bottom: 1px solid var(--line); }
+  .crumb b { color: var(--cyan); }
+  .cockpit { display: flex; border-bottom: 1px solid var(--line); }
+  .cockpit div.cell { flex: 1; padding: 16px 20px; border-right: 1px solid var(--line); }
+  .cockpit div.cell:last-child { border-right: none; }
+  .body2 { display: grid; grid-template-columns: 1fr 240px; }
+  .row { display: flex; align-items: center; gap: 14px; padding: 11px 22px; border-bottom: 1px solid var(--line); }
+  .row .ring { width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid rgba(94,230,255,.3); position: relative; flex-shrink: 0; }
+  .row .ring i { position: absolute; inset: -1.5px; border-radius: 50%; border: 1.5px solid var(--cyan); }
+  .row .name { width: 130px; }
+  .row .dept { color: var(--sub); width: 110px; }
+  .row .sc { color: var(--cyan); margin-left: auto; }
+  .row .chev { color: var(--sub); }
+  .log { border-left: 1px solid var(--line); padding: 16px 18px; color: var(--sub); line-height: 2.1; }
+  .log .t { color: #3f4a50; margin-right: 6px; }
+  .log .hi { color: var(--cyan); }
+
+  /* ============ VARIANT A: HUD STANDARD (uppercase, wide tracking) ============ */
+  .ta { font-family: 'Sora', sans-serif; }
+  .ta .status, .ta .crumb { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; }
+  .ta .cockpit .lbl { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--sub); }
+  .ta .cockpit .val { font-family: 'Rajdhani', sans-serif; font-size: 26px; font-weight: 600; color: var(--cyan); margin-top: 4px; letter-spacing: 0.01em; }
+  .ta .row { font-family: 'Sora', sans-serif; font-size: 13px; }
+  .ta .row .dept { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; }
+  .ta .row .sc { font-family: 'JetBrains Mono', monospace; font-size: 14px; }
+  .ta .log { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.02em; text-transform: uppercase; }
+
+  /* ============ VARIANT B: CONSOLE UNIFORM (one mono family, sentence case, weight-driven hierarchy) ============ */
+  .tb, .tb .status, .tb .crumb, .tb .cockpit, .tb .row, .tb .log { font-family: 'IBM Plex Mono', monospace; }
+  .tb .status, .tb .crumb { font-size: 11px; letter-spacing: 0.01em; text-transform: none; }
+  .tb .cockpit .lbl { font-size: 11px; letter-spacing: 0; text-transform: none; color: var(--sub); font-weight: 400; }
+  .tb .cockpit .val { font-size: 22px; font-weight: 600; color: var(--cyan); margin-top: 4px; }
+  .tb .row { font-size: 12.5px; font-weight: 400; }
+  .tb .row .name { font-weight: 500; }
+  .tb .row .dept { font-size: 11.5px; letter-spacing: 0; text-transform: none; color: var(--sub); font-weight: 400; }
+  .tb .row .sc { font-size: 13px; font-weight: 600; }
+  .tb .log { font-size: 10.5px; letter-spacing: 0; text-transform: none; }
+
+  /* ============ VARIANT C: SCALE CONTRAST (huge thin numbers, tiny dense caps labels, humanist body) ============ */
+  .tc { font-family: 'Inter', sans-serif; }
+  .tc .status, .tc .crumb { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 500; }
+  .tc .cockpit .lbl { font-family: 'Barlow Condensed', sans-serif; font-size: 8px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sub); font-weight: 600; }
+  .tc .cockpit .val { font-family: 'Barlow Condensed', sans-serif; font-size: 38px; font-weight: 300; color: var(--cyan); margin-top: 2px; letter-spacing: 0; }
+  .tc .row { font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 400; }
+  .tc .row .dept { font-family: 'Barlow Condensed', sans-serif; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--sub); font-weight: 500; }
+  .tc .row .sc { font-family: 'Barlow Condensed', sans-serif; font-size: 20px; font-weight: 300; }
+  .tc .log { font-family: 'Inter', sans-serif; font-size: 11px; letter-spacing: 0; text-transform: none; }
+
+  /* ============ VARIANT D: EDITORIAL TECHNICAL (title case headers, sentence case labels, mono only for real data) ============ */
+  .td { font-family: 'Space Grotesk', sans-serif; }
+  .td .status { font-family: 'Space Grotesk', sans-serif; font-size: 12px; letter-spacing: 0; text-transform: none; font-weight: 500; }
+  .td .crumb { font-family: 'Space Grotesk', sans-serif; font-size: 12.5px; letter-spacing: 0; text-transform: capitalize; font-weight: 500; }
+  .td .cockpit .lbl { font-family: 'Space Grotesk', sans-serif; font-size: 12px; letter-spacing: 0; text-transform: none; color: var(--sub); font-weight: 400; }
+  .td .cockpit .val { font-family: 'JetBrains Mono', monospace; font-size: 21px; font-weight: 500; color: var(--cyan); margin-top: 4px; }
+  .td .row { font-family: 'Space Grotesk', sans-serif; font-size: 13.5px; font-weight: 400; }
+  .td .row .dept { font-family: 'Space Grotesk', sans-serif; font-size: 12.5px; letter-spacing: 0; text-transform: none; color: var(--sub); font-weight: 400; }
+  .td .row .sc { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 500; }
+  .td .log { font-family: 'Space Grotesk', sans-serif; font-size: 12px; letter-spacing: 0; text-transform: none; font-weight: 400; }
+
+  /* ============ VARIANT E: DENSE TERMINAL (uniform mono, all caps, small + tight, weight for hierarchy only) ============ */
+  .te, .te .status, .te .crumb, .te .cockpit, .te .row, .te .log { font-family: 'JetBrains Mono', monospace; }
+  .te .status, .te .crumb { font-size: 10px; letter-spacing: 0.03em; text-transform: uppercase; }
+  .te .cockpit .lbl { font-size: 9.5px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--sub); font-weight: 400; }
+  .te .cockpit .val { font-size: 17px; font-weight: 700; color: var(--cyan); margin-top: 4px; letter-spacing: -0.01em; }
+  .te .row { font-size: 11px; font-weight: 400; text-transform: uppercase; letter-spacing: 0.02em; }
+  .te .row .name { font-weight: 600; }
+  .te .row .dept { font-size: 10px; letter-spacing: 0.02em; text-transform: uppercase; color: var(--sub); font-weight: 400; }
+  .te .row .sc { font-size: 12px; font-weight: 700; }
+  .te .log { font-size: 9.5px; letter-spacing: 0.02em; text-transform: uppercase; }
+</style>
+
+<div class="switcher">
+  <button class="active" data-t="a">A · HUD standard (caps, wide tracking)</button>
+  <button data-t="b">B · Console uniform (mono, sentence case)</button>
+  <button data-t="c">C · Scale contrast (huge thin + tiny caps)</button>
+  <button data-t="d">D · Editorial technical (title case, mono for data only)</button>
+  <button data-t="e">E · Dense terminal (small caps mono everywhere)</button>
+</div>
+
+<div class="stage">
+  <!-- shared markup rendered once per variant class -->
+  <div class="layer active ta" id="v-a"></div>
+  <div class="layer tb" id="v-b"></div>
+  <div class="layer tc" id="v-c"></div>
+  <div class="layer td" id="v-d"></div>
+  <div class="layer te" id="v-e"></div>
+</div>
+
+<script>
+  var template =
+    '<div class="status"><div class="live"><span class="dot"></span>Aim engine — live</div><div>42 respondents · synced 2m ago</div></div>' +
+    '<div class="crumb">Aim console / <b>Overview</b> / Org-wide</div>' +
+    '<div class="cockpit">' +
+      '<div class="cell"><div class="lbl">Trust</div><div class="val">3.6</div></div>' +
+      '<div class="cell"><div class="lbl">Willingness</div><div class="val">3.9</div></div>' +
+      '<div class="cell"><div class="lbl">Preparedness</div><div class="val">3.3</div></div>' +
+      '<div class="cell"><div class="lbl">Readiness index</div><div class="val">3.6</div></div>' +
+    '</div>' +
+    '<div class="body2">' +
+      '<div>' +
+        '<div class="row"><div class="ring"><i style="clip-path:inset(0 0 8% 0)"></i></div><div class="name">Jordan Ellis</div><div class="dept">Engineering</div><div class="sc">4.76</div><div class="chev">›</div></div>' +
+        '<div class="row"><div class="ring"><i style="clip-path:inset(0 0 45% 0)"></i></div><div class="name">Maya Patel</div><div class="dept">Sales</div><div class="sc">4.20</div><div class="chev">›</div></div>' +
+        '<div class="row"><div class="ring"><i style="clip-path:inset(0 0 60% 0)"></i></div><div class="name">Chris Wong</div><div class="dept">Marketing</div><div class="sc">3.68</div><div class="chev">›</div></div>' +
+        '<div class="row"><div class="ring"><i style="clip-path:inset(0 0 72% 0)"></i></div><div class="name">Sarah Kim</div><div class="dept">HR</div><div class="sc">3.20</div><div class="chev">›</div></div>' +
+        '<div class="row"><div class="ring"><i style="clip-path:inset(0 0 88% 0)"></i></div><div class="name">Tom Bradley</div><div class="dept">Finance</div><div class="sc">2.46</div><div class="chev">›</div></div>' +
+      '</div>' +
+      '<div class="log">' +
+        '<div><span class="t">14:02:11</span>Scan complete</div>' +
+        '<div><span class="t">14:01:48</span><span class="hi">J. Ellis</span> 4.50 → 4.76</div>' +
+        '<div><span class="t">13:58:03</span><span class="hi">M. Patel</span> segment up</div>' +
+        '<div><span class="t">13:51:27</span>New respondent</div>' +
+        '<div><span class="t">13:40:09</span>Sync ok</div>' +
+      '</div>' +
+    '</div>';
+
+  ['v-a','v-b','v-c','v-d','v-e'].forEach(function(id){ document.getElementById(id).innerHTML = template; });
+
+  document.querySelectorAll('.switcher button').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      document.querySelectorAll('.switcher button').forEach(function(b){ b.classList.remove('active'); });
+      document.querySelectorAll('.layer').forEach(function(l){ l.classList.remove('active'); });
+      btn.classList.add('active');
+      document.getElementById('v-' + btn.dataset.t).classList.add('active');
+    });
+  });
+</script>

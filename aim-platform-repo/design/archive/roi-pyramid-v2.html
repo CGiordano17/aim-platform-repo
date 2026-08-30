@@ -1,0 +1,179 @@
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Michroma&family=Rajdhani:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #030507; font-family: 'Rajdhani', sans-serif; color: #E7EEF2; }
+  .stage { min-height: 780px; padding: 30px 26px 40px; background: #030507;
+    background-image: linear-gradient(rgba(94,230,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(94,230,255,0.03) 1px, transparent 1px);
+    background-size: 26px 26px; }
+  .head { text-align: center; padding: 4px 0 6px; }
+  .head h1 { font-family: 'Michroma', sans-serif; font-size: 16px; margin: 0; letter-spacing: 0.04em; }
+  .head h1 span { color: #5EE6FF; }
+  .head p { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #6E8790; margin: 8px 0 0; }
+  .flow { text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #F0A94E; letter-spacing: 0.05em; margin-top: 6px; }
+  .legend { display: flex; justify-content: center; gap: 18px; margin: 14px 0 4px; flex-wrap: wrap; }
+  .legend .l { display: flex; align-items: center; gap: 6px; font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #9FB6BC; text-transform: uppercase; letter-spacing: 0.03em; }
+  .legend .dot { width: 8px; height: 8px; border-radius: 2px; }
+  .lvl-label { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase; fill: #45585e; }
+</style>
+
+<div class="stage">
+  <div class="head">
+    <h1>USE CASE ROI PYRAMID / <span>AIM</span></h1>
+    <p>EVERY NODE IS A GOAL, NOT A CATEGORY — ADOPTION IS WHAT MOVES IT UPWARD</p>
+    <div class="flow">ADOPTION OF USE CASES → FUNCTIONAL GOALS → CROSS-FUNCTIONAL OUTCOMES → ENTERPRISE ROI</div>
+  </div>
+  <div class="legend" id="legend"></div>
+  <svg id="pyramid" viewBox="0 0 1120 700" width="100%" style="max-width:1200px; display:block; margin:0 auto;"></svg>
+</div>
+
+<script>
+(function() {
+  var svg = document.getElementById('pyramid');
+  var ns = 'http://www.w3.org/2000/svg';
+  var colors = { Sales: '#5EE6FF', Support: '#7FE0A0', Engineering: '#F0A94E', Finance: '#C79EF0', HR: '#F08FB0' };
+
+  var legend = document.getElementById('legend');
+  Object.keys(colors).forEach(function(k) {
+    legend.innerHTML += '<div class="l"><span class="dot" style="background:' + colors[k] + '"></span>' + k + '</div>';
+  });
+
+  // ---- every node is a goal statement + its own adoption number ----
+  var L0 = [
+    { id: 'sc1', fn: 'Sales', label: 'Draft sales proposals with AI to cut prep time', adopt: 62, x: 90 },
+    { id: 'sc2', fn: 'Sales', label: 'Score renewal risk automatically to catch churn early', adopt: 41, x: 215 },
+    { id: 'su1', fn: 'Support', label: 'Draft first-response replies to resolve tickets faster', adopt: 74, x: 345 },
+    { id: 'en1', fn: 'Engineering', label: 'Summarize pull requests to speed up code review', adopt: 68, x: 475 },
+    { id: 'en2', fn: 'Engineering', label: 'Triage incidents automatically to cut response time', adopt: 55, x: 600 },
+    { id: 'fi1', fn: 'Finance', label: 'Auto-code expense lines to reduce processing errors', adopt: 38, x: 730 },
+    { id: 'hr1', fn: 'HR', label: 'Draft job descriptions to standardize and speed hiring', adopt: 80, x: 860 },
+    { id: 'hr2', fn: 'HR', label: 'Match new hires to AI-fluent peers for faster ramp', adopt: 29, x: 985 }
+  ];
+  var L1 = [
+    { id: 'sales-v', fn: 'Sales', label: 'Shorten the sales cycle with AI-assisted proposals and risk scoring', parents: ['sc1','sc2'] },
+    { id: 'sup-v', fn: 'Support', label: 'Cut ticket resolution time with AI-drafted responses', parents: ['su1'] },
+    { id: 'eng-v', fn: 'Engineering', label: 'Increase engineering throughput with AI-assisted review and triage', parents: ['en1','en2'] },
+    { id: 'fin-v', fn: 'Finance', label: 'Improve expense processing accuracy with AI coding', parents: ['fi1'] },
+    { id: 'hr-v', fn: 'HR', label: 'Speed up hiring and onboarding with AI assistance', parents: ['hr1','hr2'] }
+  ];
+  var L2 = [
+    { id: 'cx', fn: null, label: 'Deliver faster, more consistent customer interactions across sales and support', parents: ['sales-v','sup-v'] },
+    { id: 'opx', fn: null, label: 'Reduce operational cycle time across engineering and finance', parents: ['eng-v','fin-v'] },
+    { id: 'tc', fn: 'HR', label: 'Build a stronger, faster-ramping talent pipeline', parents: ['hr-v'] }
+  ];
+  var L3 = [
+    { id: 'rev', fn: null, label: 'Grow revenue by converting faster sales cycles and better CX into closed deals', parents: ['cx','opx'] },
+    { id: 'ret', fn: null, label: 'Protect margin and retain talent by scaling proven AI workflows org-wide', parents: ['opx','tc'] }
+  ];
+
+  var byId = {};
+  L0.forEach(function(n){ byId[n.id] = n; });
+  function rollup(level) {
+    level.forEach(function(n) {
+      var xs = n.parents.map(function(p){ return byId[p].x; });
+      var ad = n.parents.map(function(p){ return byId[p].adopt; });
+      n.x = xs.reduce(function(a,b){return a+b;},0) / xs.length;
+      n.adopt = Math.round(ad.reduce(function(a,b){return a+b;},0) / ad.length);
+      byId[n.id] = n;
+    });
+  }
+  rollup(L1); rollup(L2); rollup(L3);
+
+  var Y = { 0: 620, 1: 450, 2: 280, 3: 110 };
+
+  var tri = document.createElementNS(ns, 'path');
+  tri.setAttribute('d', 'M 30 660 L 1090 660 L 560 40 Z');
+  tri.setAttribute('fill', 'none'); tri.setAttribute('stroke', 'rgba(94,230,255,0.1)'); tri.setAttribute('stroke-dasharray', '4 5');
+  svg.appendChild(tri);
+
+  var levelLabels = ['USE CASE / GOAL', 'FUNCTIONAL GOAL', 'CROSS-FUNCTIONAL OUTCOME', 'ENTERPRISE ROI GOAL'];
+  [0,1,2,3].forEach(function(l) {
+    var t = document.createElementNS(ns, 'text');
+    t.setAttribute('x', 16); t.setAttribute('y', Y[l] - 46);
+    t.setAttribute('class', 'lvl-label'); t.textContent = levelLabels[l];
+    svg.appendChild(t);
+  });
+
+  function drawEdge(x1,y1,x2,y2,color) {
+    var mY = (y1 + y2) / 2;
+    var p = document.createElementNS(ns, 'path');
+    p.setAttribute('d', 'M ' + x1 + ' ' + y1 + ' C ' + x1 + ' ' + mY + ', ' + x2 + ' ' + mY + ', ' + x2 + ' ' + y2);
+    p.setAttribute('fill', 'none'); p.setAttribute('stroke', color); p.setAttribute('stroke-width', 1.3); p.setAttribute('opacity', 0.55);
+    svg.appendChild(p);
+  }
+
+  function wrapText(text, maxChars) {
+    var words = text.split(' '), lines = [], cur = '';
+    words.forEach(function(w) {
+      if ((cur + ' ' + w).trim().length > maxChars) { lines.push(cur.trim()); cur = w; }
+      else { cur = (cur + ' ' + w).trim(); }
+    });
+    if (cur) lines.push(cur);
+    return lines;
+  }
+
+  function drawNode(n, level, y) {
+    var wBylevel = [150, 190, 220, 240];
+    var maxCharsBylevel = [20, 24, 28, 30];
+    var w = wBylevel[level];
+    var lines = wrapText(n.label, maxCharsBylevel[level]);
+    var lineH = level === 0 ? 11 : 12.5;
+    var h = lines.length * lineH + 34;
+    var color = n.fn ? colors[n.fn] : '#EAF6F8';
+
+    var g = document.createElementNS(ns, 'g');
+    var rect = document.createElementNS(ns, 'rect');
+    rect.setAttribute('x', n.x - w/2); rect.setAttribute('y', y - h/2);
+    rect.setAttribute('width', w); rect.setAttribute('height', h);
+    rect.setAttribute('fill', 'rgba(10,16,20,0.94)'); rect.setAttribute('stroke', color); rect.setAttribute('stroke-opacity', 0.55);
+    g.appendChild(rect);
+    [[n.x-w/2,y-h/2,1,1],[n.x+w/2,y-h/2,-1,1],[n.x-w/2,y+h/2,1,-1],[n.x+w/2,y+h/2,-1,-1]].forEach(function(c) {
+      var cl = document.createElementNS(ns, 'path');
+      var cx=c[0], cy=c[1], dx=c[2]*7, dy=c[3]*7;
+      cl.setAttribute('d', 'M ' + (cx+dx) + ' ' + cy + ' L ' + cx + ' ' + cy + ' L ' + cx + ' ' + (cy+dy));
+      cl.setAttribute('fill','none'); cl.setAttribute('stroke', color); cl.setAttribute('stroke-width', 1.5); cl.setAttribute('opacity', 0.85);
+      g.appendChild(cl);
+    });
+
+    var textStartY = y - h/2 + 16;
+    var txt = document.createElementNS(ns, 'text');
+    txt.setAttribute('x', n.x); txt.setAttribute('text-anchor', 'middle');
+    txt.setAttribute('font-family', 'Rajdhani, sans-serif'); txt.setAttribute('font-weight', 600);
+    txt.setAttribute('font-size', level === 0 ? 10 : level === 1 ? 10.5 : 11.5);
+    txt.setAttribute('fill', '#EAF6F8');
+    lines.forEach(function(line, i) {
+      var tspan = document.createElementNS(ns, 'tspan');
+      tspan.setAttribute('x', n.x); tspan.setAttribute('y', textStartY + i * lineH);
+      tspan.textContent = line;
+      txt.appendChild(tspan);
+    });
+    g.appendChild(txt);
+
+    var sub = document.createElementNS(ns, 'text');
+    sub.setAttribute('x', n.x); sub.setAttribute('y', y + h/2 - 9);
+    sub.setAttribute('text-anchor', 'middle'); sub.setAttribute('font-family', 'JetBrains Mono, monospace');
+    sub.setAttribute('font-size', 9); sub.setAttribute('fill', color); sub.setAttribute('font-weight', 600);
+    sub.textContent = 'ADOPTION ' + n.adopt + '%';
+    g.appendChild(sub);
+
+    svg.appendChild(g);
+  }
+
+  [L1, L2, L3].forEach(function(level, idx) {
+    var y = Y[idx+1], childY = Y[idx];
+    level.forEach(function(n) {
+      n.parents.forEach(function(pid) {
+        var parentNode = byId[pid];
+        var color = n.fn ? colors[n.fn] : (parentNode.fn ? colors[parentNode.fn] : '#5EE6FF');
+        drawEdge(parentNode.x, childY, n.x, y, color);
+      });
+    });
+  });
+
+  L0.forEach(function(n) { drawNode(n, 0, Y[0]); });
+  L1.forEach(function(n) { drawNode(n, 1, Y[1]); });
+  L2.forEach(function(n) { drawNode(n, 2, Y[2]); });
+  L3.forEach(function(n) { drawNode(n, 3, Y[3]); });
+})();
+</script>

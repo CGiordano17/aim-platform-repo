@@ -1,0 +1,241 @@
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Sora:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: 'Sora', sans-serif; background: #07090B; }
+  :root {
+    --cyan: #5EE6FF; --amber: #F0A94E; --bg: #07090B; --panel: rgba(16,21,26,0.7);
+    --line: rgba(94,230,255,0.12); --text: #E7EEF2; --sub: #6E8790;
+  }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+  .disp { font-family: 'Rajdhani', sans-serif; }
+
+  .switcher { display: flex; gap: 6px; padding: 14px; background: #07090B; flex-wrap: wrap; }
+  .switcher button { flex: 1; min-width: 120px; padding: 10px 6px; font-size: 11px; font-family: 'JetBrains Mono', monospace; border: 1px solid #253038; background: #10151A; color: #6E8790; cursor: pointer; letter-spacing: 0.03em; }
+  .switcher button.active { background: var(--cyan); color: #07090B; border-color: var(--cyan); font-weight: 600; }
+
+  .stage { position: relative; min-height: 660px; background: var(--bg);
+    background-image: linear-gradient(rgba(94,230,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(94,230,255,0.03) 1px, transparent 1px);
+    background-size: 26px 26px; }
+  .layer { display: none; color: var(--text); }
+  .layer.active { display: block; }
+
+  .status { display: flex; align-items: center; justify-content: space-between; padding: 8px 22px; border-bottom: 1px solid var(--line); font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.08em; color: var(--sub); }
+  .live { display: flex; align-items: center; gap: 7px; color: var(--cyan); }
+  .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 6px 1px rgba(94,230,255,0.7); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+  .bp { position: relative; background: var(--panel); border: 1px solid var(--line); }
+  .c { position: absolute; width: 11px; height: 11px; border-color: var(--cyan); opacity: 0.75; }
+  .c.tl { top: -1px; left: -1px; border-top: 1.5px solid; border-left: 1.5px solid; }
+  .c.tr { top: -1px; right: -1px; border-top: 1.5px solid; border-right: 1.5px solid; }
+  .c.bl { bottom: -1px; left: -1px; border-bottom: 1.5px solid; border-left: 1.5px solid; }
+  .c.br { bottom: -1px; right: -1px; border-bottom: 1.5px solid; border-right: 1.5px solid; }
+  .chip { font-family: 'JetBrains Mono', monospace; font-size: 8.5px; padding: 3px 7px; border: 1px solid rgba(94,230,255,0.4); color: var(--cyan); background: rgba(94,230,255,0.06); clip-path: polygon(5px 0, 100% 0, 100% 100%, 0 100%, 0 5px); }
+  .btn { font-family: 'JetBrains Mono', monospace; font-size: 10px; padding: 8px 16px; background: transparent; border: 1px solid rgba(94,230,255,0.4); color: var(--cyan); clip-path: polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px); cursor: pointer; text-transform: uppercase; }
+
+  /* ---------- LAYOUT 1: ORBITAL DECK ---------- */
+  .l1 .tabs { display: flex; justify-content: center; gap: 4px; padding: 18px 0 6px; }
+  .l1 .tabs span { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; padding: 7px 16px; color: var(--sub); border: 1px solid var(--line); letter-spacing: 0.05em; }
+  .l1 .tabs span.on { color: var(--cyan); border-color: var(--cyan); }
+  .l1 .orbit { position: relative; width: 560px; height: 520px; margin: 10px auto 0; }
+  .l1 .sat { position: absolute; width: 108px; padding: 10px 12px; transform: translate(-50%,-50%); text-align: center; }
+  .l1 .sat .lbl { font-family: 'JetBrains Mono', monospace; font-size: 8.5px; color: var(--sub); letter-spacing: 0.06em; }
+  .l1 .sat .val { font-family: 'JetBrains Mono', monospace; font-size: 18px; color: var(--cyan); margin-top: 3px; }
+  .l1 .curverow { max-width: 620px; margin: 4px auto 0; padding: 0 20px 20px; }
+
+  /* ---------- LAYOUT 2: TERMINAL MANIFEST ---------- */
+  .l2 .crumb { padding: 12px 24px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--sub); border-bottom: 1px solid var(--line); }
+  .l2 .crumb b { color: var(--cyan); font-weight: 500; }
+  .l2 .cockpit { display: flex; border-bottom: 1px solid var(--line); }
+  .l2 .cockpit div { flex: 1; padding: 16px 20px; border-right: 1px solid var(--line); }
+  .l2 .cockpit div:last-child { border-right: none; }
+  .l2 .cockpit .lbl { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--sub); letter-spacing: 0.08em; }
+  .l2 .cockpit .val { font-family: 'JetBrains Mono', monospace; font-size: 20px; color: var(--cyan); margin-top: 4px; }
+  .l2 .body { display: grid; grid-template-columns: 1fr 240px; }
+  .l2 .row { display: flex; align-items: center; gap: 14px; padding: 11px 22px; border-bottom: 1px solid var(--line); font-size: 12.5px; }
+  .l2 .row .ring { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid rgba(94,230,255,0.3); position: relative; flex-shrink: 0; }
+  .l2 .row .ring i { position: absolute; inset: -1.5px; border-radius: 50%; border: 1.5px solid var(--cyan); clip-path: inset(0 0 30% 0); }
+  .l2 .row .name { font-weight: 500; width: 130px; }
+  .l2 .row .dept { color: var(--sub); width: 110px; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; }
+  .l2 .row .sc { font-family: 'JetBrains Mono', monospace; color: var(--cyan); margin-left: auto; }
+  .l2 .row .chev { color: var(--sub); }
+  .l2 .log { border-left: 1px solid var(--line); padding: 16px 18px; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--sub); line-height: 2; }
+  .l2 .log .t { color: #3f4a50; margin-right: 6px; }
+  .l2 .log .hi { color: var(--cyan); }
+
+  /* ---------- LAYOUT 3: SPLIT DIAGNOSTIC ---------- */
+  .l3 { display: grid; grid-template-columns: 280px 1fr; min-height: 660px; }
+  .l3 .schematic { background: #0a0d10; border-right: 1px solid var(--line); padding: 24px 20px; }
+  .l3 .schematic .lbl { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: var(--sub); margin-bottom: 14px; }
+  .l3 .report { padding: 0; }
+  .l3 .rtabs { display: flex; gap: 20px; padding: 16px 28px; border-bottom: 1px solid var(--line); font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+  .l3 .rtabs span { color: var(--sub); }
+  .l3 .rtabs span.on { color: var(--cyan); border-bottom: 1.5px solid var(--cyan); padding-bottom: 4px; }
+  .l3 .rbody { padding: 24px 32px; }
+  .l3 .rbody h2 { font-family: 'Rajdhani', sans-serif; font-size: 19px; font-weight: 600; margin: 0 0 10px; }
+  .l3 .rbody p { font-size: 13.5px; line-height: 1.8; color: #C6D0D4; max-width: 560px; }
+  .l3 .rbody .inline { font-family: 'JetBrains Mono', monospace; color: var(--cyan); background: rgba(94,230,255,0.08); padding: 1px 6px; }
+  .l3 .rbody ul { padding-left: 18px; font-size: 13px; color: #C6D0D4; line-height: 2; }
+
+  /* ---------- LAYOUT 4: FULL-BLEED HOLOGRAM ---------- */
+  .l4 { position: relative; min-height: 660px; display: flex; align-items: center; justify-content: center; }
+  .l4 .idmark { position: absolute; top: 20px; left: 24px; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--sub); letter-spacing: 0.1em; }
+  .l4 .ctrl { position: absolute; top: 18px; right: 22px; display: flex; gap: 8px; }
+  .l4 .ctrl div { width: 30px; height: 30px; border: 1px solid rgba(94,230,255,0.35); display: flex; align-items: center; justify-content: center; color: var(--cyan); font-size: 13px; clip-path: polygon(6px 0,100% 0,100% 100%,0 100%,0 6px); }
+  .l4 .anno { position: absolute; width: 150px; padding: 8px 10px; }
+  .l4 .anno .t { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: var(--cyan); }
+  .l4 .anno .s { font-family: 'JetBrains Mono', monospace; font-size: 8.5px; color: var(--sub); margin-top: 2px; }
+
+  /* ---------- LAYOUT 5: MISSION WALL ---------- */
+  .l5 .wall { display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 150px); gap: 14px; padding: 22px; }
+  .tile { position: relative; background: #0d1216; border: 1px solid var(--line); padding: 14px 16px; }
+  .tile::after { content: ""; position: absolute; bottom: 8px; right: 8px; width: 5px; height: 5px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 5px 1px rgba(94,230,255,0.6); }
+  .tile .lbl { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--sub); letter-spacing: 0.08em; }
+  .tile .val { font-family: 'JetBrains Mono', monospace; font-size: 22px; color: var(--cyan); margin-top: 8px; }
+  .t-big { grid-column: span 2; grid-row: span 2; }
+  .t-tall { grid-row: span 2; }
+  .t-wide { grid-column: span 2; }
+</style>
+
+<div class="switcher">
+  <button class="active" data-l="1">1 · Orbital deck</button>
+  <button data-l="2">2 · Terminal manifest</button>
+  <button data-l="3">3 · Split diagnostic</button>
+  <button data-l="4">4 · Full-bleed hologram</button>
+  <button data-l="5">5 · Mission wall</button>
+</div>
+
+<div class="stage">
+
+  <!-- LAYOUT 1 -->
+  <div class="layer l1 active" id="layer-1">
+    <div class="status"><div class="live"><span class="dot"></span>AIM ENGINE // LIVE</div><div>42 RESPONDENTS · SYNCED 2M AGO</div></div>
+    <div class="tabs"><span class="on">OVERVIEW</span><span>ASSESSMENT</span><span>SCORING</span><span>REPORTS</span><span>TEAMS</span></div>
+    <div class="orbit">
+      <svg width="560" height="520" style="position:absolute; top:0; left:0;">
+        <line x1="280" y1="270" x2="280" y2="70" stroke="rgba(94,230,255,0.15)"/>
+        <line x1="280" y1="270" x2="480" y2="215" stroke="rgba(94,230,255,0.15)"/>
+        <line x1="280" y1="270" x2="403" y2="450" stroke="rgba(94,230,255,0.15)"/>
+        <line x1="280" y1="270" x2="156" y2="450" stroke="rgba(94,230,255,0.15)"/>
+        <line x1="280" y1="270" x2="80" y2="215" stroke="rgba(94,230,255,0.15)"/>
+        <circle cx="280" cy="270" r="90" fill="none" stroke="rgba(94,230,255,0.12)"/>
+        <circle cx="280" cy="270" r="78" fill="none" stroke="var(--cyan)" stroke-width="8" stroke-dasharray="360 490" transform="rotate(-90 280 270)" style="filter:drop-shadow(0 0 4px rgba(94,230,255,.6))"/>
+        <text x="280" y="264" text-anchor="middle" fill="#F2F6F8" font-family="JetBrains Mono, monospace" font-size="30">3.6</text>
+        <text x="280" y="286" text-anchor="middle" fill="#6E8790" font-family="JetBrains Mono, monospace" font-size="9">READINESS INDEX</text>
+      </svg>
+      <div class="bp sat" style="top:70px; left:280px;"><div class="c tl"></div><div class="c br"></div><div class="lbl">RESPONDENTS</div><div class="val">42</div></div>
+      <div class="bp sat" style="top:215px; left:480px;"><div class="c tl"></div><div class="c br"></div><div class="lbl">TRUST</div><div class="val">3.6</div></div>
+      <div class="bp sat" style="top:450px; left:403px;"><div class="c tl"></div><div class="c br"></div><div class="lbl">WILLINGNESS</div><div class="val">3.9</div></div>
+      <div class="bp sat" style="top:450px; left:156px;"><div class="c tl"></div><div class="c br"></div><div class="lbl">PREP</div><div class="val">3.3</div></div>
+      <div class="bp sat" style="top:215px; left:80px;"><div class="c tl"></div><div class="c br"></div><div class="lbl">UPLIFT</div><div class="val">+0.4</div></div>
+    </div>
+    <div class="curverow bp"><div class="c tl"></div><div class="c br"></div>
+      <div style="padding:16px 20px 20px;">
+        <div class="mono" style="font-size:9.5px; color:var(--sub); letter-spacing:.1em; margin-bottom:10px;">DIFFUSION TRACE</div>
+        <svg viewBox="0 0 580 90" width="100%" height="90"><path d="M10,80 C60,72 90,20 180,16 C260,14 300,14 330,16 C400,20 440,60 460,76 C490,82 520,84 570,84" fill="none" stroke="var(--cyan)" stroke-width="2"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- LAYOUT 2 -->
+  <div class="layer l2" id="layer-2">
+    <div class="status"><div class="live"><span class="dot"></span>AIM ENGINE // LIVE</div><div>42 RESPONDENTS</div></div>
+    <div class="crumb">AIM CONSOLE / <b>OVERVIEW</b> / ORG-WIDE</div>
+    <div class="cockpit">
+      <div><div class="lbl">TRUST</div><div class="val">3.6</div></div>
+      <div><div class="lbl">WILLINGNESS</div><div class="val">3.9</div></div>
+      <div><div class="lbl">PREPAREDNESS</div><div class="val">3.3</div></div>
+      <div><div class="lbl">READINESS INDEX</div><div class="val">3.6</div></div>
+    </div>
+    <div class="body">
+      <div>
+        <div class="row"><div class="ring"><i></i></div><div class="name">Jordan Ellis</div><div class="dept">ENGINEERING</div><div class="sc">4.76</div><div class="chev">›</div></div>
+        <div class="row"><div class="ring"><i style="clip-path:inset(0 0 45% 0)"></i></div><div class="name">Maya Patel</div><div class="dept">SALES</div><div class="sc">4.20</div><div class="chev">›</div></div>
+        <div class="row"><div class="ring"><i style="clip-path:inset(0 0 60% 0)"></i></div><div class="name">Chris Wong</div><div class="dept">MARKETING</div><div class="sc">3.68</div><div class="chev">›</div></div>
+        <div class="row"><div class="ring"><i style="clip-path:inset(0 0 72% 0)"></i></div><div class="name">Sarah Kim</div><div class="dept">HR</div><div class="sc">3.20</div><div class="chev">›</div></div>
+        <div class="row"><div class="ring"><i style="clip-path:inset(0 0 88% 0)"></i></div><div class="name">Tom Bradley</div><div class="dept">FINANCE</div><div class="sc">2.46</div><div class="chev">›</div></div>
+      </div>
+      <div class="log">
+        <div><span class="t">14:02:11</span>SCAN COMPLETE</div>
+        <div><span class="t">14:01:48</span><span class="hi">J.ELLIS</span> 4.50→4.76</div>
+        <div><span class="t">13:58:03</span><span class="hi">M.PATEL</span> SEGMENT UP</div>
+        <div><span class="t">13:51:27</span>NEW RESPONDENT</div>
+        <div><span class="t">13:40:09</span>SYNC OK</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LAYOUT 3 -->
+  <div class="layer l3" id="layer-3">
+    <div class="schematic">
+      <div class="lbl">READINESS INSTRUMENT</div>
+      <svg viewBox="0 0 220 220" width="100%"><circle cx="110" cy="110" r="90" fill="none" stroke="rgba(94,230,255,0.12)"/><circle cx="110" cy="110" r="78" fill="none" stroke="var(--cyan)" stroke-width="9" stroke-dasharray="360 490" transform="rotate(-90 110 110)"/><text x="110" y="106" text-anchor="middle" fill="#F2F6F8" font-family="JetBrains Mono, monospace" font-size="26">3.6</text><text x="110" y="126" text-anchor="middle" fill="#6E8790" font-family="JetBrains Mono, monospace" font-size="8.5">INDEX</text></svg>
+      <div class="lbl" style="margin-top:20px;">DIFFUSION TRACE</div>
+      <svg viewBox="0 0 220 80" width="100%" height="80"><path d="M6,70 C30,62 40,18 90,15 C120,14 130,14 150,16 C180,20 195,52 205,66 C210,70 214,72 216,73" fill="none" stroke="var(--cyan)" stroke-width="1.6"/></svg>
+    </div>
+    <div class="report">
+      <div class="rtabs"><span class="on">SUMMARY</span><span>DEPARTMENTS</span><span>INDIVIDUALS</span><span>METHODOLOGY</span></div>
+      <div class="rbody">
+        <h2>Organization-wide diagnostic</h2>
+        <p>Across <span class="inline">42</span> respondents, overall readiness sits at <span class="inline">3.6</span> of 5.0, up <span class="inline">+0.4</span> from the pre-assessment baseline. Willingness leads the three core dimensions at <span class="inline">3.9</span>, while preparedness trails at <span class="inline">3.3</span> — the gap most training investment should target.</p>
+        <ul>
+          <li>34% of respondents fall in the early-majority band</li>
+          <li>9 people qualify for the superpowered pathway</li>
+          <li>Engineering and Sales lead segment movement post-training</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- LAYOUT 4 -->
+  <div class="layer l4" id="layer-4">
+    <div class="idmark">AIM // READINESS ENGINE</div>
+    <div class="ctrl"><div>≡</div><div>⟳</div></div>
+    <svg viewBox="0 0 700 320" width="88%" style="filter:drop-shadow(0 0 10px rgba(94,230,255,.25))">
+      <path d="M10,270 C90,255 130,80 230,65 C320,55 360,55 400,65 C480,80 550,200 590,255 C630,270 670,278 690,280" fill="none" stroke="var(--cyan)" stroke-width="2.5"/>
+      <circle cx="230" cy="65" r="4" fill="#07090B" stroke="var(--cyan)" stroke-width="2"/>
+      <circle cx="590" cy="255" r="4" fill="#07090B" stroke="var(--cyan)" stroke-width="2"/>
+      <line x1="230" y1="65" x2="230" y2="20" stroke="var(--amber)" stroke-width="1"/>
+      <line x1="590" y1="255" x2="590" y2="300" stroke="var(--amber)" stroke-width="1"/>
+    </svg>
+    <div class="bp anno" style="top:44px; left:29%;"><div class="c tl"></div><div class="c br"></div><div class="t">EARLY MAJORITY</div><div class="s">34% · PEAK CONCENTRATION</div></div>
+    <div class="bp anno" style="bottom:20px; left:73%;"><div class="c tl"></div><div class="c br"></div><div class="t">LAGGARDS</div><div class="s">16% · ENABLED PATHWAY</div></div>
+  </div>
+
+  <!-- LAYOUT 5 -->
+  <div class="layer l5" id="layer-5">
+    <div class="status"><div class="live"><span class="dot"></span>AIM ENGINE // LIVE</div><div>42 RESPONDENTS</div></div>
+    <div class="wall">
+      <div class="tile t-big"><div class="lbl">DIFFUSION TRACE</div>
+        <svg viewBox="0 0 300 90" width="100%" height="90" style="margin-top:8px;"><path d="M6,80 C40,70 60,18 100,15 C140,13 150,13 170,16 C220,20 250,55 270,72 C280,78 290,80 294,81" fill="none" stroke="var(--cyan)" stroke-width="2"/></svg>
+      </div>
+      <div class="tile"><div class="lbl">TRUST</div><div class="val">3.6</div></div>
+      <div class="tile"><div class="lbl">WILLINGNESS</div><div class="val">3.9</div></div>
+      <div class="tile t-tall"><div class="lbl">MANIFEST</div>
+        <div class="mono" style="font-size:10.5px; margin-top:10px; line-height:2.1; color:#C6D0D4;">J. ELLIS &nbsp;4.76<br>M. PATEL &nbsp;4.20<br>C. WONG &nbsp;&nbsp;3.68<br>S. KIM &nbsp;&nbsp;&nbsp;&nbsp;3.20</div>
+      </div>
+      <div class="tile"><div class="lbl">PREP</div><div class="val">3.3</div></div>
+      <div class="tile t-wide"><div class="lbl">PATHWAY PLACEMENT</div>
+        <div style="display:flex; gap:18px; margin-top:8px;" class="mono">
+          <span style="color:var(--cyan)">18 <span style="color:var(--sub); font-size:9px;">ENABLED</span></span>
+          <span style="color:var(--cyan)">15 <span style="color:var(--sub); font-size:9px;">AUGMENTED</span></span>
+          <span style="color:var(--cyan)">9 <span style="color:var(--sub); font-size:9px;">SUPER</span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  document.querySelectorAll('.switcher button').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      document.querySelectorAll('.switcher button').forEach(function(b){ b.classList.remove('active'); });
+      document.querySelectorAll('.layer').forEach(function(l){ l.classList.remove('active'); });
+      btn.classList.add('active');
+      document.getElementById('layer-' + btn.dataset.l).classList.add('active');
+    });
+  });
+</script>

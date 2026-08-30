@@ -1,0 +1,210 @@
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;700&family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Archivo+Expanded:wght@600;700&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: 'Space Grotesk', sans-serif; background: #0d0d0f; }
+
+  .switcher { display: flex; gap: 8px; padding: 16px; background: #0d0d0f; }
+  .switcher button {
+    flex: 1; padding: 12px 8px; font-size: 12px; font-family: 'Space Grotesk', sans-serif;
+    border: 1px solid #333; background: #1a1a1c; color: #999; cursor: pointer; border-radius: 4px;
+    letter-spacing: 0.03em;
+  }
+  .switcher button.active { background: #fff; color: #111; border-color: #fff; font-weight: 500; }
+
+  .stage { position: relative; min-height: 620px; }
+  .theme { position: absolute; inset: 0; opacity: 0; pointer-events: none; transition: opacity 0.15s; overflow: hidden; }
+  .theme.active { opacity: 1; pointer-events: auto; position: relative; }
+
+  /* ============ THEME A: INSTRUMENT PANEL ============ */
+  .theme-a {
+    background: #14181C; color: #E8ECEF; font-family: 'Space Grotesk', sans-serif;
+    display: grid; grid-template-columns: 180px 1fr; min-height: 620px;
+  }
+  .theme-a .nav { background: #10141A; border-right: 1px solid #2A323A; padding: 20px 0; }
+  .theme-a .nav .brand { padding: 0 18px 18px; font-size: 10px; letter-spacing: 0.18em; color: #4FC3D9; text-transform: uppercase; border-bottom: 1px solid #2A323A; margin-bottom: 8px; font-family: 'IBM Plex Mono', monospace; }
+  .theme-a .nav .item { padding: 9px 18px; font-size: 12px; color: #8B96A0; display: flex; align-items: center; gap: 8px; }
+  .theme-a .nav .item.on { color: #E8ECEF; background: #1C2228; border-left: 2px solid #4FC3D9; }
+  .theme-a .nav .item .dot { width: 5px; height: 5px; border-radius: 50%; background: #4FC3D9; opacity: 0; }
+  .theme-a .nav .item.on .dot { opacity: 1; }
+  .theme-a .main { padding: 28px 32px; }
+  .theme-a .hdr { font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: #E8A33D; font-family: 'IBM Plex Mono', monospace; margin-bottom: 6px; }
+  .theme-a h1 { font-size: 24px; font-weight: 500; margin: 0 0 20px; letter-spacing: -0.01em; }
+  .theme-a .gauges { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: #2A323A; margin-bottom: 1px; }
+  .theme-a .gauge { background: #1C2228; padding: 16px; }
+  .theme-a .gauge .lbl { font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: #6B747C; margin-bottom: 10px; font-family: 'IBM Plex Mono', monospace; }
+  .theme-a .gauge .val { font-family: 'IBM Plex Mono', monospace; font-size: 26px; font-weight: 500; color: #4FC3D9; }
+  .theme-a .gauge .val small { font-size: 12px; color: #6B747C; }
+  .theme-a .gauge .tick { height: 3px; background: #2A323A; margin-top: 10px; position: relative; }
+  .theme-a .gauge .tick i { position: absolute; top: 0; left: 0; height: 100%; background: #E8A33D; }
+  .theme-a .panel { background: #1C2228; padding: 24px; border: 1px solid #2A323A; }
+  .theme-a .panel .lbl { font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: #6B747C; margin-bottom: 16px; font-family: 'IBM Plex Mono', monospace; }
+
+  /* ============ THEME B: FIELD NOTEBOOK ============ */
+  .theme-b {
+    background: #E9E6DA; color: #22321F; font-family: 'Source Sans 3', sans-serif;
+    background-image: radial-gradient(#c9c4ae 0.6px, transparent 0.6px); background-size: 14px 14px;
+    display: grid; grid-template-columns: 180px 1fr; min-height: 620px;
+  }
+  .theme-b .nav { background: #F5F3EA; border-right: 1px solid #cfc9b4; padding: 22px 0; }
+  .theme-b .nav .brand { padding: 0 18px 16px; font-family: 'Fraunces', serif; font-size: 15px; font-weight: 600; color: #35507A; border-bottom: 1px solid #cfc9b4; margin-bottom: 10px; }
+  .theme-b .nav .item { padding: 9px 18px; font-size: 12.5px; color: #5c6650; font-family: 'Fraunces', serif; }
+  .theme-b .nav .item.on { color: #22321F; font-weight: 600; position: relative; }
+  .theme-b .nav .item.on::before { content: "—"; margin-right: 6px; color: #B08A3E; }
+  .theme-b .main { padding: 30px 34px; }
+  .theme-b .hdr { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #B08A3E; margin-bottom: 6px; font-weight: 600; }
+  .theme-b h1 { font-family: 'Fraunces', serif; font-size: 27px; font-weight: 600; margin: 0 0 22px; color: #22321F; }
+  .theme-b .gauges { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 22px; }
+  .theme-b .gauge { background: #F5F3EA; padding: 16px; border: 1px solid #d8d3c1; position: relative; }
+  .theme-b .gauge .lbl { font-size: 10.5px; letter-spacing: 0.04em; text-transform: uppercase; color: #7a8a71; margin-bottom: 8px; }
+  .theme-b .gauge .val { font-family: 'Fraunces', serif; font-size: 25px; font-weight: 600; color: #35507A; }
+  .theme-b .gauge .circle { position: absolute; top: 10px; right: 10px; width: 30px; height: 30px; border: 1.5px solid #B08A3E; border-radius: 50%; opacity: 0.5; transform: rotate(-8deg); }
+  .theme-b .panel { background: #F5F3EA; padding: 24px; border: 1px solid #d8d3c1; }
+  .theme-b .panel .lbl { font-size: 10.5px; letter-spacing: 0.04em; text-transform: uppercase; color: #7a8a71; margin-bottom: 16px; font-weight: 600; }
+  .theme-b .note { font-family: 'Fraunces', serif; font-style: italic; font-size: 11px; color: #7a8a71; margin-top: 12px; }
+
+  /* ============ THEME C: DIFFUSION SPECTRUM ============ */
+  .theme-c {
+    background: #0B0B10; color: #F2F2F5; font-family: 'Space Grotesk', sans-serif;
+    display: grid; grid-template-columns: 180px 1fr; min-height: 620px;
+  }
+  .theme-c .nav { background: #0B0B10; border-right: 1px solid #232330; padding: 20px 0; position: relative; }
+  .theme-c .nav::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: linear-gradient(180deg,#6C63FF,#3E92CC,#2EC4B6,#FF9F1C,#FF3E6C); }
+  .theme-c .nav .brand { padding: 0 18px 16px 22px; font-family: 'Archivo Expanded', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 0.02em; border-bottom: 1px solid #232330; margin-bottom: 10px; }
+  .theme-c .nav .item { padding: 9px 18px 9px 22px; font-size: 12px; color: #8A8A96; }
+  .theme-c .nav .item.on { color: #fff; font-weight: 500; }
+  .theme-c .main { padding: 28px 32px; }
+  .theme-c .hdr { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: #8A8A96; margin-bottom: 6px; }
+  .theme-c h1 { font-family: 'Archivo Expanded', sans-serif; font-size: 26px; font-weight: 700; margin: 0 0 20px; letter-spacing: -0.01em; }
+  .theme-c .gauges { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; margin-bottom: 20px; }
+  .theme-c .gauge { background: #15151C; padding: 16px; border-radius: 3px; }
+  .theme-c .gauge .lbl { font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: #6B6B78; margin-bottom: 10px; }
+  .theme-c .gauge .val { font-family: 'IBM Plex Mono', monospace; font-size: 25px; font-weight: 500; }
+  .theme-c .g1 .val { color: #6C63FF; } .theme-c .g2 .val { color: #3E92CC; } .theme-c .g3 .val { color: #2EC4B6; } .theme-c .g4 .val { color: #FF9F1C; }
+  .theme-c .panel { background: #15151C; padding: 24px; border-radius: 3px; }
+  .theme-c .panel .lbl { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #6B6B78; margin-bottom: 16px; }
+  .theme-c .band { height: 46px; border-radius: 4px; background: linear-gradient(90deg,#6C63FF,#3E92CC,#2EC4B6,#FF9F1C,#FF3E6C); position: relative; margin-bottom: 10px; }
+  .theme-c .band .marker { position: absolute; top: -6px; width: 2px; height: 58px; background: #fff; }
+  .theme-c .legend { display: flex; justify-content: space-between; font-size: 9px; color: #6B6B78; text-transform: uppercase; letter-spacing: 0.04em; }
+
+  svg text { font-family: inherit; }
+</style>
+
+<div class="switcher">
+  <button class="active" data-t="a">A · Instrument panel</button>
+  <button data-t="b">B · Field notebook</button>
+  <button data-t="c">C · Diffusion spectrum</button>
+</div>
+
+<div class="stage">
+
+  <!-- THEME A -->
+  <div class="theme theme-a active" id="t-a">
+    <div class="nav">
+      <div class="brand">AIM · CTRL</div>
+      <div class="item on"><span class="dot"></span>Overview</div>
+      <div class="item"><span class="dot"></span>Assessment</div>
+      <div class="item"><span class="dot"></span>Scoring</div>
+      <div class="item"><span class="dot"></span>Reports</div>
+    </div>
+    <div class="main">
+      <div class="hdr">Readout // Org-wide</div>
+      <h1>Readiness Instrument</h1>
+      <div class="gauges">
+        <div class="gauge"><div class="lbl">Respondents</div><div class="val">42</div><div class="tick"><i style="width:70%"></i></div></div>
+        <div class="gauge"><div class="lbl">Trust</div><div class="val">3.6<small> /5</small></div><div class="tick"><i style="width:72%"></i></div></div>
+        <div class="gauge"><div class="lbl">Willingness</div><div class="val">3.9<small> /5</small></div><div class="tick"><i style="width:78%"></i></div></div>
+        <div class="gauge"><div class="lbl">Uplift</div><div class="val">+0.4</div><div class="tick"><i style="width:44%"></i></div></div>
+      </div>
+      <div class="panel">
+        <div class="lbl">Diffusion trace — segment calibration</div>
+        <svg viewBox="0 0 560 140" width="100%" height="140">
+          <line x1="10" y1="120" x2="550" y2="120" stroke="#2A323A" stroke-width="1"/>
+          <g stroke="#3a444d" stroke-width="1">
+            <line x1="60" y1="30" x2="60" y2="120"/><line x1="180" y1="30" x2="180" y2="120"/>
+            <line x1="330" y1="30" x2="330" y2="120"/><line x1="460" y1="30" x2="460" y2="120"/>
+          </g>
+          <path d="M10,118 C60,110 90,40 180,35 C260,32 300,32 330,35 C400,40 440,90 460,108 C490,116 520,119 550,119" fill="none" stroke="#4FC3D9" stroke-width="2"/>
+          <circle cx="60" cy="88" r="3" fill="#E8A33D"/><circle cx="180" cy="35" r="3" fill="#E8A33D"/>
+          <circle cx="330" cy="35" r="3" fill="#E8A33D"/><circle cx="460" cy="108" r="3" fill="#E8A33D"/>
+          <text x="30" y="135" fill="#6B747C" font-size="9" font-family="IBM Plex Mono, monospace">LAG</text>
+          <text x="150" y="135" fill="#6B747C" font-size="9" font-family="IBM Plex Mono, monospace">EARLY MAJ</text>
+          <text x="420" y="135" fill="#6B747C" font-size="9" font-family="IBM Plex Mono, monospace">INNOV</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- THEME B -->
+  <div class="theme theme-b" id="t-b">
+    <div class="nav">
+      <div class="brand">AIM Field Notes</div>
+      <div class="item on">Overview</div>
+      <div class="item">Assessment</div>
+      <div class="item">Scoring</div>
+      <div class="item">Reports</div>
+    </div>
+    <div class="main">
+      <div class="hdr">Observation log</div>
+      <h1>How the org is reading today</h1>
+      <div class="gauges">
+        <div class="gauge"><div class="lbl">Respondents</div><div class="val">42</div></div>
+        <div class="gauge"><div class="lbl">Trust</div><div class="val">3.6</div><div class="circle"></div></div>
+        <div class="gauge"><div class="lbl">Willingness</div><div class="val">3.9</div></div>
+        <div class="gauge"><div class="lbl">Uplift</div><div class="val">+0.4</div></div>
+      </div>
+      <div class="panel">
+        <div class="lbl">Field-plotted diffusion curve</div>
+        <svg viewBox="0 0 560 150" width="100%" height="150">
+          <path d="M10,128 C60,118 90,50 180,44 C260,40 300,40 330,44 C400,50 440,98 460,118 C490,124 520,128 550,128"
+                fill="none" stroke="#35507A" stroke-width="1.6" stroke-dasharray="1 0"/>
+          <g font-family="Fraunces, serif" font-size="10" fill="#5c6650">
+            <text x="20" y="140">laggards</text><text x="150" y="30">early majority</text><text x="440" y="140">innovators</text>
+          </g>
+          <ellipse cx="180" cy="44" rx="26" ry="16" fill="none" stroke="#B08A3E" stroke-width="1.3" transform="rotate(-6 180 44)"/>
+          <text x="140" y="20" font-family="Fraunces, serif" font-style="italic" font-size="10" fill="#B08A3E">↳ concentration here</text>
+        </svg>
+        <div class="note">— noted 3 depts clustering just past the midpoint, worth a follow-up conversation</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- THEME C -->
+  <div class="theme theme-c" id="t-c">
+    <div class="nav">
+      <div class="brand">AIM SPECTRUM</div>
+      <div class="item on">Overview</div>
+      <div class="item">Assessment</div>
+      <div class="item">Scoring</div>
+      <div class="item">Reports</div>
+    </div>
+    <div class="main">
+      <div class="hdr">Population scan</div>
+      <h1>Where the org sits on the curve</h1>
+      <div class="gauges">
+        <div class="gauge g1"><div class="lbl">Respondents</div><div class="val">42</div></div>
+        <div class="gauge g2"><div class="lbl">Trust</div><div class="val">3.6</div></div>
+        <div class="gauge g3"><div class="lbl">Willingness</div><div class="val">3.9</div></div>
+        <div class="gauge g4"><div class="lbl">Uplift</div><div class="val">+0.4</div></div>
+      </div>
+      <div class="panel">
+        <div class="lbl">Live diffusion spectrum</div>
+        <div class="band"><div class="marker" style="left:58%"></div></div>
+        <div class="legend"><span>Laggards</span><span>Late maj.</span><span>Early maj.</span><span>Early adopt.</span><span>Innovators</span></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  document.querySelectorAll('.switcher button').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.switcher button').forEach(function(b) { b.classList.remove('active'); });
+      document.querySelectorAll('.theme').forEach(function(t) { t.classList.remove('active'); });
+      btn.classList.add('active');
+      document.getElementById('t-' + btn.dataset.t).classList.add('active');
+    });
+  });
+</script>

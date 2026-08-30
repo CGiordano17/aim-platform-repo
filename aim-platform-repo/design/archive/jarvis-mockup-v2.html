@@ -1,0 +1,233 @@
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Michroma&family=Rajdhani:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #030507; font-family: 'Rajdhani', sans-serif; }
+  .stage {
+    position: relative; min-height: 660px; padding: 34px 30px;
+    background: radial-gradient(ellipse 800px 550px at 62% 42%, rgba(94,230,255,0.07), transparent 70%), #030507;
+  }
+  .cols { display: grid; grid-template-columns: 300px 1fr; gap: 18px; align-items: start; }
+
+  .win { background: linear-gradient(180deg, rgba(12,18,24,0.92), rgba(6,9,12,0.96)); border: 1px solid rgba(94,230,255,0.22); border-radius: 6px; box-shadow: 0 0 26px rgba(94,230,255,0.06), 0 10px 26px rgba(0,0,0,0.55); overflow: hidden; }
+  .titlebar { display: flex; align-items: center; justify-content: space-between; padding: 9px 13px; border-bottom: 1px solid rgba(94,230,255,0.14); }
+  .titlebar .t { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; color: #B9D4DA; text-transform: uppercase; }
+  .titlebar .win-icons { display: flex; gap: 8px; color: #4C6169; font-size: 10px; }
+
+  /* ---------- LEFT: hierarchy-first numbers ---------- */
+  .hero-num { padding: 20px 16px 16px; text-align: center; border-bottom: 1px solid rgba(94,230,255,0.1); }
+  .hero-num .v { font-family: 'JetBrains Mono', monospace; font-size: 48px; font-weight: 600; color: #5EE6FF; line-height: 1; text-shadow: 0 0 14px rgba(94,230,255,0.35); }
+  .hero-num .l { font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: #9FB6BC; margin-top: 6px; }
+  .hero-num .d { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #5EE6FF; margin-top: 4px; }
+
+  .deptlist { padding: 14px 16px; border-bottom: 1px solid rgba(94,230,255,0.1); }
+  .deptlist .h { font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: #6E8790; margin-bottom: 10px; }
+  .deptrow { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; }
+  .deptrow .n { font-size: 13.5px; color: #D7E6E9; }
+  .deptrow .v { font-family: 'JetBrains Mono', monospace; font-size: 15px; color: #5EE6FF; font-weight: 500; }
+
+  .chartblock { padding: 16px; }
+  .chartblock .h { font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: #6E8790; margin-bottom: 12px; }
+  .chartblock .foot { display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace; font-size: 8.5px; color: #4C6169; margin-top: 6px; }
+
+  /* ---------- RIGHT/MAIN: globe hero ---------- */
+  .centerhead { text-align: center; padding: 18px 0 6px; }
+  .centerhead h1 { font-family: 'Michroma', sans-serif; font-size: 17px; margin: 0; letter-spacing: 0.04em; color: #EAF6F8; }
+  .centerhead h1 span { color: #5EE6FF; }
+  .statrow { display: flex; justify-content: center; gap: 26px; margin-top: 9px; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #6E8790; letter-spacing: 0.05em; }
+  .statrow b { color: #5EE6FF; font-weight: 600; }
+  .globewrap { position: relative; width: 420px; height: 420px; margin: 6px auto 0; }
+  .globewrap canvas { position: absolute; inset: 0; }
+  .ring { position: absolute; inset: 0; pointer-events: none; }
+  .axishint { display: flex; justify-content: space-between; width: 420px; margin: 2px auto 0; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.06em; color: #4C6169; text-transform: uppercase; }
+  .legend { text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #45585e; margin-top: 4px; letter-spacing: 0.03em; }
+  .plabel { position: absolute; font-family: 'JetBrains Mono', monospace; font-size: 9.5px; white-space: nowrap; transition: opacity 0.15s; pointer-events: none; }
+  .plabel .dot { display: inline-block; width: 5px; height: 5px; border-radius: 50%; background: #5EE6FF; margin-right: 6px; box-shadow: 0 0 5px 1px rgba(94,230,255,0.7); vertical-align: middle; }
+  .plabel .nm { color: #EAF6F8; font-weight: 500; }
+  .plabel .sc { color: #5EE6FF; margin-left: 5px; }
+  .plabel .sg { color: #6E8790; margin-left: 5px; }
+
+  .node { position: absolute; width: 72px; padding: 8px 6px; text-align: center; background: rgba(10,16,20,0.85); border: 1px solid rgba(94,230,255,0.35); }
+  .node .val { font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 600; color: #5EE6FF; }
+  .node .nl { font-family: 'JetBrains Mono', monospace; font-size: 7.5px; letter-spacing: 0.04em; text-transform: uppercase; color: #9FB6BC; margin-top: 3px; }
+
+  .tabbar { display: flex; justify-content: center; gap: 30px; padding: 16px 0 18px; border-top: 1px solid rgba(94,230,255,0.12); margin-top: 16px; }
+  .tabbar span { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: #55666C; }
+  .tabbar span.on { color: #EAF6F8; font-weight: 600; }
+</style>
+
+<div class="stage">
+  <div class="cols">
+
+    <!-- LEFT WINDOW -->
+    <div class="win">
+      <div class="titlebar"><span class="t">Org readiness</span><span class="win-icons">─&nbsp;&#9633;&nbsp;×</span></div>
+
+      <div class="hero-num">
+        <div class="v">3.6</div>
+        <div class="l">Readiness index</div>
+        <div class="d">+0.4 vs pre-assessment</div>
+      </div>
+
+      <div class="deptlist">
+        <div class="h">Departments</div>
+        <div class="deptrow"><span class="n">Engineering</span><span class="v">4.2</span></div>
+        <div class="deptrow"><span class="n">Sales</span><span class="v">3.8</span></div>
+        <div class="deptrow"><span class="n">Marketing</span><span class="v">3.3</span></div>
+        <div class="deptrow"><span class="n">HR</span><span class="v">2.9</span></div>
+        <div class="deptrow"><span class="n">Finance</span><span class="v">2.5</span></div>
+      </div>
+
+      <div class="chartblock">
+        <div class="h">Segment mix — 42 respondents</div>
+        <svg viewBox="0 0 240 70" width="100%" height="70">
+          <g fill="#5EE6FF" opacity="0.85">
+            <rect x="6" y="42" width="34" height="22"/><rect x="52" y="30" width="34" height="34"/>
+            <rect x="98" y="10" width="34" height="54"/><rect x="144" y="26" width="34" height="38"/>
+            <rect x="190" y="48" width="34" height="16"/>
+          </g>
+        </svg>
+        <div class="foot"><span>LAG</span><span>LATE</span><span>EARLY MAJ</span><span>ADOPT</span><span>INNOV</span></div>
+      </div>
+    </div>
+
+    <!-- MAIN WINDOW: globe -->
+    <div class="win">
+      <div class="centerhead">
+        <h1>READINESS STATUS / <span>AIM</span></h1>
+        <div class="statrow">
+          <div>INDEX <b>3.6</b></div>
+          <div>RESPONDENTS <b>42</b></div>
+          <div>SYNCED <b>2M AGO</b></div>
+        </div>
+      </div>
+      <div class="globewrap" id="globewrap">
+        <canvas id="globe"></canvas>
+        <svg class="ring" viewBox="0 0 420 420">
+          <circle cx="210" cy="210" r="185" fill="none" stroke="rgba(94,230,255,0.16)" stroke-width="1"/>
+        </svg>
+        <div id="labels"></div>
+        <div class="node" style="top:2px; left:-8px;"><div class="val">42</div><div class="nl">Assessed</div></div>
+        <div class="node" style="top:104px; left:-64px;"><div class="val">3.6</div><div class="nl">Avg score</div></div>
+        <div class="node" style="bottom:50px; left:-46px;"><div class="val">5</div><div class="nl">Depts</div></div>
+        <div class="node" style="top:2px; right:-8px;"><div class="val">9</div><div class="nl">Superpwr</div></div>
+        <div class="node" style="top:104px; right:-64px;"><div class="val">8</div><div class="nl">Teams</div></div>
+        <div class="node" style="bottom:50px; right:-46px;"><div class="val">2</div><div class="nl">Pending</div></div>
+      </div>
+      <div class="axishint"><span>← Laggards</span><span>Innovators →</span></div>
+      <div class="legend">Each point represents one respondent, plotted by adoption segment</div>
+      <div class="tabbar">
+        <span class="on">Home</span><span>Assessment</span><span>Scoring</span><span>Reports</span><span>Teams</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+(function() {
+  if (!window.THREE) return;
+  var wrap = document.getElementById('globewrap');
+  var canvas = document.getElementById('globe');
+  var labelsEl = document.getElementById('labels');
+  var W = 420, H = 420;
+  var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+  renderer.setSize(W, H);
+  renderer.setPixelRatio(window.devicePixelRatio || 1);
+
+  var scene = new THREE.Scene();
+  var camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+  camera.position.z = 5.6;
+
+  var group = new THREE.Group();
+  scene.add(group);
+
+  var wireGeo = new THREE.SphereGeometry(2, 20, 14);
+  var wireMat = new THREE.MeshBasicMaterial({ color: 0x1b4a55, wireframe: true, transparent: true, opacity: 0.3 });
+  group.add(new THREE.Mesh(wireGeo, wireMat));
+
+  var count = 380;
+  var positions = new Float32Array(count * 3);
+  var colors = new Float32Array(count * 3);
+  var c1 = new THREE.Color(0x5ee6ff), c2 = new THREE.Color(0x1b4a55);
+  for (var i = 0; i < count; i++) {
+    var u = Math.random(), v = Math.random();
+    var theta = 2 * Math.PI * u;
+    var phi = Math.acos(2 * v - 1);
+    var r = 2.02;
+    positions[i*3] = r * Math.sin(phi) * Math.cos(theta);
+    positions[i*3+1] = r * Math.sin(phi) * Math.sin(theta);
+    positions[i*3+2] = r * Math.cos(phi);
+    var mixT = Math.random();
+    var col = c2.clone().lerp(c1, Math.pow(mixT, 2.2));
+    colors[i*3] = col.r; colors[i*3+1] = col.g; colors[i*3+2] = col.b;
+  }
+  var pGeo = new THREE.BufferGeometry();
+  pGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  pGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  var pMat = new THREE.PointsMaterial({ size: 0.04, vertexColors: true, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false });
+  group.add(new THREE.Points(pGeo, pMat));
+
+  function arc(a, b) {
+    var mid = a.clone().add(b).multiplyScalar(0.5).normalize().multiplyScalar(2.6);
+    var curve = new THREE.QuadraticBezierCurve3(a, mid, b);
+    var geo = new THREE.BufferGeometry().setFromPoints(curve.getPoints(24));
+    var mat = new THREE.LineBasicMaterial({ color: 0x5ee6ff, transparent: true, opacity: 0.3, blending: THREE.AdditiveBlending });
+    return new THREE.Line(geo, mat);
+  }
+  function randPt() {
+    var theta = Math.random()*2*Math.PI, phi = Math.acos(2*Math.random()-1);
+    return new THREE.Vector3(2*Math.sin(phi)*Math.cos(theta), 2*Math.sin(phi)*Math.sin(theta), 2*Math.cos(phi));
+  }
+  for (var j = 0; j < 6; j++) group.add(arc(randPt(), randPt()));
+
+  // Named respondent markers — fixed local positions so they read consistently as the globe turns
+  var markers = [
+    { pos: new THREE.Vector3(1.5, 0.9, 1.1), name: 'J. Ellis', seg: 'Innovator', score: '4.76' },
+    { pos: new THREE.Vector3(-1.3, 0.5, 1.4), name: 'M. Patel', seg: 'Early adopter', score: '4.20' },
+    { pos: new THREE.Vector3(0.2, -1.2, 1.5), name: 'C. Wong', seg: 'Early majority', score: '3.68' },
+    { pos: new THREE.Vector3(-1.0, -1.0, 1.2), name: 'T. Bradley', seg: 'Laggard', score: '2.46' }
+  ];
+  markers.forEach(function(m) { m.pos.setLength(2.05); });
+
+  var markerGeo = new THREE.BufferGeometry().setFromPoints(markers.map(function(m){ return m.pos; }));
+  var markerMat = new THREE.PointsMaterial({ size: 0.09, color: 0xffffff, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
+  group.add(new THREE.Points(markerGeo, markerMat));
+
+  labelsEl.innerHTML = markers.map(function(m, i) {
+    return '<div class="plabel" id="lbl' + i + '"><span class="dot"></span><span class="nm">' + m.name + '</span><span class="sg">' + m.seg + '</span><span class="sc">' + m.score + '</span></div>';
+  }).join('');
+
+  var light = new THREE.PointLight(0x5ee6ff, 1.1);
+  light.position.set(3, 3, 4);
+  scene.add(light);
+  scene.add(new THREE.AmbientLight(0x223338));
+
+  var tmp = new THREE.Vector3();
+  function updateLabels() {
+    markers.forEach(function(m, i) {
+      var rotated = m.pos.clone().applyQuaternion(group.quaternion);
+      var el = document.getElementById('lbl' + i);
+      if (rotated.z < 0.4) { el.style.opacity = 0; return; }
+      tmp.copy(rotated);
+      var projected = tmp.project(camera);
+      var x = (projected.x * 0.5 + 0.5) * W;
+      var y = (-projected.y * 0.5 + 0.5) * H;
+      el.style.opacity = Math.min(1, (rotated.z - 0.4) * 1.5);
+      el.style.left = (x + 10) + 'px';
+      el.style.top = (y - 6) + 'px';
+    });
+  }
+
+  function animate() {
+    requestAnimationFrame(animate);
+    group.rotation.y += 0.0018;
+    group.rotation.x = 0.12;
+    renderer.render(scene, camera);
+    updateLabels();
+  }
+  animate();
+})();
+</script>

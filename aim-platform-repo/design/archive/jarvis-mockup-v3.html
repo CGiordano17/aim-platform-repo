@@ -1,0 +1,254 @@
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Michroma&family=Rajdhani:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #030507; font-family: 'Rajdhani', sans-serif; }
+  .stage {
+    position: relative; min-height: 660px; padding: 34px 30px;
+    background: radial-gradient(ellipse 800px 550px at 62% 42%, rgba(94,230,255,0.06), transparent 70%), #030507;
+  }
+  .cols { display: grid; grid-template-columns: 300px 1fr; gap: 18px; align-items: start; }
+
+  .win { background: linear-gradient(180deg, rgba(12,18,24,0.92), rgba(6,9,12,0.96)); border: 1px solid rgba(94,230,255,0.22); border-radius: 6px; box-shadow: 0 0 26px rgba(94,230,255,0.06), 0 10px 26px rgba(0,0,0,0.55); overflow: hidden; }
+  .titlebar { display: flex; align-items: center; justify-content: space-between; padding: 9px 13px; border-bottom: 1px solid rgba(94,230,255,0.14); }
+  .titlebar .t { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; color: #B9D4DA; text-transform: uppercase; }
+  .titlebar .win-icons { display: flex; gap: 8px; color: #4C6169; font-size: 10px; }
+
+  .hero-num { padding: 20px 16px 16px; text-align: center; border-bottom: 1px solid rgba(94,230,255,0.1); }
+  .hero-num .v { font-family: 'JetBrains Mono', monospace; font-size: 48px; font-weight: 600; color: #5EE6FF; line-height: 1; text-shadow: 0 0 14px rgba(94,230,255,0.35); }
+  .hero-num .l { font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: #9FB6BC; margin-top: 6px; }
+  .hero-num .d { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #5EE6FF; margin-top: 4px; }
+
+  .deptlist { padding: 14px 16px; border-bottom: 1px solid rgba(94,230,255,0.1); }
+  .deptlist .h { font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: #6E8790; margin-bottom: 10px; }
+  .deptrow { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; }
+  .deptrow .n { font-size: 13.5px; color: #D7E6E9; }
+  .deptrow .v { font-family: 'JetBrains Mono', monospace; font-size: 15px; color: #5EE6FF; font-weight: 500; }
+
+  .chartblock { padding: 16px; }
+  .chartblock .h { font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: #6E8790; margin-bottom: 12px; }
+  .chartblock .foot { display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace; font-size: 8.5px; color: #4C6169; margin-top: 6px; }
+
+  .centerhead { text-align: center; padding: 18px 0 6px; }
+  .centerhead h1 { font-family: 'Michroma', sans-serif; font-size: 17px; margin: 0; letter-spacing: 0.04em; color: #EAF6F8; }
+  .centerhead h1 span { color: #5EE6FF; }
+  .statrow { display: flex; justify-content: center; gap: 26px; margin-top: 9px; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #6E8790; letter-spacing: 0.05em; }
+  .statrow b { color: #5EE6FF; font-weight: 600; }
+
+  .nodestrip { display: grid; grid-template-columns: repeat(6, 1fr); gap: 1px; background: rgba(94,230,255,0.1); margin: 18px 20px 4px; }
+  .nodestrip .n { background: #0a1116; padding: 10px 8px; text-align: center; }
+  .nodestrip .n .val { font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 600; color: #5EE6FF; }
+  .nodestrip .n .nl { font-family: 'JetBrains Mono', monospace; font-size: 7.5px; letter-spacing: 0.04em; text-transform: uppercase; color: #9FB6BC; margin-top: 3px; }
+
+  .curvewrap { position: relative; padding: 10px 24px 6px; }
+  .curvewrap svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .catlabels { display: flex; justify-content: space-between; padding: 2px 24px 4px; font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.04em; text-transform: uppercase; color: #6E8790; }
+  .catlabels div { text-align: center; flex: 1; }
+  .catlabels div b { display: block; color: #9FB6BC; font-size: 8px; font-weight: 400; margin-top: 2px; }
+  .legend { text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #45585e; margin-top: 6px; letter-spacing: 0.03em; }
+
+  .plabel { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; }
+  .plabel .nm { fill: #EAF6F8; font-weight: 500; }
+  .plabel .sc { fill: #5EE6FF; }
+  .plabel .sg { fill: #6E8790; }
+
+  .tabbar { display: flex; justify-content: center; gap: 30px; padding: 16px 0 18px; border-top: 1px solid rgba(94,230,255,0.12); margin-top: 14px; }
+  .tabbar span { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: #55666C; }
+  .tabbar span.on { color: #EAF6F8; font-weight: 600; }
+
+  .popdot { animation: bob 3.6s ease-in-out infinite; }
+  @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+</style>
+
+<div class="stage">
+  <div class="cols">
+
+    <div class="win">
+      <div class="titlebar"><span class="t">Org readiness</span><span class="win-icons">─&nbsp;&#9633;&nbsp;×</span></div>
+      <div class="hero-num">
+        <div class="v">3.6</div>
+        <div class="l">Readiness index</div>
+        <div class="d">+0.4 vs pre-assessment</div>
+      </div>
+      <div class="deptlist">
+        <div class="h">Departments</div>
+        <div class="deptrow"><span class="n">Engineering</span><span class="v">4.2</span></div>
+        <div class="deptrow"><span class="n">Sales</span><span class="v">3.8</span></div>
+        <div class="deptrow"><span class="n">Marketing</span><span class="v">3.3</span></div>
+        <div class="deptrow"><span class="n">HR</span><span class="v">2.9</span></div>
+        <div class="deptrow"><span class="n">Finance</span><span class="v">2.5</span></div>
+      </div>
+      <div class="chartblock">
+        <div class="h">Segment mix — 42 respondents</div>
+        <svg viewBox="0 0 240 70" width="100%" height="70">
+          <g fill="#5EE6FF" opacity="0.85">
+            <rect x="6" y="42" width="34" height="22"/><rect x="52" y="30" width="34" height="34"/>
+            <rect x="98" y="10" width="34" height="54"/><rect x="144" y="26" width="34" height="38"/>
+            <rect x="190" y="48" width="34" height="16"/>
+          </g>
+        </svg>
+        <div class="foot"><span>LAG</span><span>LATE</span><span>EARLY MAJ</span><span>ADOPT</span><span>INNOV</span></div>
+      </div>
+    </div>
+
+    <div class="win">
+      <div class="centerhead">
+        <h1>READINESS STATUS / <span>AIM</span></h1>
+        <div class="statrow">
+          <div>INDEX <b>3.6</b></div>
+          <div>RESPONDENTS <b>42</b></div>
+          <div>SYNCED <b>2M AGO</b></div>
+        </div>
+      </div>
+
+      <div class="nodestrip">
+        <div class="n"><div class="val">42</div><div class="nl">Assessed</div></div>
+        <div class="n"><div class="val">3.6</div><div class="nl">Avg score</div></div>
+        <div class="n"><div class="val">5</div><div class="nl">Depts</div></div>
+        <div class="n"><div class="val">18</div><div class="nl">Enabled</div></div>
+        <div class="n"><div class="val">15</div><div class="nl">Augmented</div></div>
+        <div class="n"><div class="val">9</div><div class="nl">Superpwr</div></div>
+      </div>
+
+      <div class="curvewrap">
+        <svg id="curveSvg" viewBox="0 0 860 300" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="fillGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#5EE6FF" stop-opacity="0.28"/>
+              <stop offset="100%" stop-color="#5EE6FF" stop-opacity="0"/>
+            </linearGradient>
+            <radialGradient id="comet" r="65%">
+              <stop offset="0%" stop-color="#EAFBFF" stop-opacity="0.95"/>
+              <stop offset="60%" stop-color="#5EE6FF" stop-opacity="0.35"/>
+              <stop offset="100%" stop-color="#5EE6FF" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+          <line x1="10" y1="250" x2="850" y2="250" stroke="rgba(94,230,255,0.15)" stroke-width="1"/>
+          <path id="fillPath" fill="url(#fillGrad)" stroke="none"/>
+          <path id="curvePath" fill="none" stroke="#5EE6FF" stroke-width="2.4" style="filter: drop-shadow(0 0 4px rgba(94,230,255,0.5));"/>
+          <g id="popDots"></g>
+          <circle id="comet" r="9" fill="url(#comet)"/>
+          <g id="markers"></g>
+        </svg>
+      </div>
+      <div class="catlabels">
+        <div>Laggards<b>16%</b></div>
+        <div>Late majority<b>34%</b></div>
+        <div>Early majority<b>34%</b></div>
+        <div>Early adopters<b>13.5%</b></div>
+        <div>Innovators<b>2.5%</b></div>
+      </div>
+      <div class="legend">Each point represents one respondent, plotted by adoption segment · scan-light traces live population density</div>
+
+      <div class="tabbar">
+        <span class="on">Home</span><span>Assessment</span><span>Scoring</span><span>Reports</span><span>Teams</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+(function() {
+  var W = 860, H = 300, baseY = 250, marginX = 10, spanX = W - marginX * 2, maxRise = 205;
+
+  var segments = [
+    { start: 0, end: 0.08, h: 0.35 },
+    { start: 0.08, end: 0.25, h: 0.65 },
+    { start: 0.25, end: 0.62, h: 1.0 },
+    { start: 0.62, end: 0.88, h: 1.0 },
+    { start: 0.88, end: 1.0, h: 0.55 }
+  ];
+  function curveHeight(x) {
+    for (var i = 0; i < segments.length; i++) {
+      var s = segments[i];
+      if (x >= s.start && x <= s.end) {
+        var t = (x - s.start) / (s.end - s.start);
+        return s.h * Math.sin(t * Math.PI);
+      }
+    }
+    return 0;
+  }
+  function xAt(frac) { return marginX + frac * spanX; }
+  function yAt(frac) { return baseY - curveHeight(frac) * maxRise; }
+
+  var d = 'M ' + xAt(0) + ' ' + baseY;
+  var steps = 200;
+  for (var i = 0; i <= steps; i++) {
+    var f = i / steps;
+    d += ' L ' + xAt(f).toFixed(1) + ' ' + yAt(f).toFixed(1);
+  }
+  document.getElementById('curvePath').setAttribute('d', d);
+  document.getElementById('fillPath').setAttribute('d', d + ' L ' + xAt(1) + ' ' + baseY + ' Z');
+
+  // population dots: rejection-sample under the curve for a natural density look
+  var dotsG = document.getElementById('popDots');
+  var placed = 0, attempts = 0;
+  while (placed < 46 && attempts < 4000) {
+    attempts++;
+    var fx = Math.random();
+    var h = curveHeight(fx);
+    var fy = Math.random() * Math.max(h, 0.04);
+    if (fy <= h) {
+      var px = xAt(fx), py = baseY - fy * maxRise - Math.random() * 6;
+      var c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      c.setAttribute('cx', px.toFixed(1));
+      c.setAttribute('cy', py.toFixed(1));
+      c.setAttribute('r', 2.4);
+      c.setAttribute('fill', '#5EE6FF');
+      c.setAttribute('opacity', (0.35 + Math.random() * 0.45).toFixed(2));
+      c.setAttribute('class', 'popdot');
+      c.style.animationDelay = (Math.random() * 3).toFixed(2) + 's';
+      c.style.animationDuration = (3 + Math.random() * 2).toFixed(2) + 's';
+      dotsG.appendChild(c);
+      placed++;
+    }
+  }
+
+  // named respondent markers at fixed segment positions
+  var markers = [
+    { frac: 0.1, name: 'T. Bradley', seg: 'Laggard', score: '2.46', dy: 26 },
+    { frac: 0.44, name: 'C. Wong', seg: 'Early majority', score: '3.68', dy: -18 },
+    { frac: 0.75, name: 'M. Patel', seg: 'Early adopter', score: '4.20', dy: -18 },
+    { frac: 0.92, name: 'J. Ellis', seg: 'Innovator', score: '4.76', dy: -18 }
+  ];
+  var mg = document.getElementById('markers');
+  markers.forEach(function(m) {
+    var x = xAt(m.frac), y = yAt(m.frac);
+    var ns = 'http://www.w3.org/2000/svg';
+    var dot = document.createElementNS(ns, 'circle');
+    dot.setAttribute('cx', x); dot.setAttribute('cy', y); dot.setAttribute('r', 4.5);
+    dot.setAttribute('fill', '#07090B'); dot.setAttribute('stroke', '#5EE6FF'); dot.setAttribute('stroke-width', 2);
+    mg.appendChild(dot);
+    var ly = y + m.dy;
+    var line = document.createElementNS(ns, 'line');
+    line.setAttribute('x1', x); line.setAttribute('y1', y); line.setAttribute('x2', x); line.setAttribute('y2', ly);
+    line.setAttribute('stroke', '#F0A94E'); line.setAttribute('stroke-width', 1);
+    mg.appendChild(line);
+    var txt = document.createElementNS(ns, 'text');
+    txt.setAttribute('x', x + 8); txt.setAttribute('y', ly + (m.dy > 0 ? 4 : -4));
+    txt.setAttribute('class', 'plabel');
+    txt.innerHTML = '<tspan class="nm">' + m.name + '</tspan> <tspan class="sg">' + m.seg + '</tspan> <tspan class="sc">' + m.score + '</tspan>';
+    mg.appendChild(txt);
+  });
+
+  // traveling scan-light along the actual curve path
+  var pathEl = document.getElementById('curvePath');
+  var comet = document.getElementById('comet');
+  var len = pathEl.getTotalLength();
+  var t0 = null;
+  function frame(ts) {
+    if (!t0) t0 = ts;
+    var elapsed = (ts - t0) / 1000;
+    var cycle = 6;
+    var p = (elapsed % cycle) / cycle;
+    var eased = p < 0.5 ? p * 2 : 2 - p * 2;
+    var pt = pathEl.getPointAtLength(eased * len);
+    comet.setAttribute('cx', pt.x);
+    comet.setAttribute('cy', pt.y);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>

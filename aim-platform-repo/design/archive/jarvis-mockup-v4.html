@@ -1,0 +1,298 @@
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Michroma&family=Rajdhani:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #030507; font-family: 'Rajdhani', sans-serif; }
+  .stage {
+    position: relative; min-height: 700px; padding: 34px 30px;
+    background: radial-gradient(ellipse 800px 550px at 62% 42%, rgba(94,230,255,0.06), transparent 70%), #030507;
+  }
+  .cols { display: grid; grid-template-columns: 300px 1fr; gap: 18px; align-items: start; }
+
+  .win { background: linear-gradient(180deg, rgba(12,18,24,0.92), rgba(6,9,12,0.96)); border: 1px solid rgba(94,230,255,0.22); border-radius: 6px; box-shadow: 0 0 26px rgba(94,230,255,0.06), 0 10px 26px rgba(0,0,0,0.55); overflow: hidden; }
+  .titlebar { display: flex; align-items: center; justify-content: space-between; padding: 9px 13px; border-bottom: 1px solid rgba(94,230,255,0.14); }
+  .titlebar .t { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; color: #B9D4DA; text-transform: uppercase; }
+  .titlebar .win-icons { display: flex; gap: 8px; color: #4C6169; font-size: 10px; }
+
+  .hero-num { padding: 20px 16px 16px; text-align: center; border-bottom: 1px solid rgba(94,230,255,0.1); }
+  .hero-num .v { font-family: 'JetBrains Mono', monospace; font-size: 48px; font-weight: 600; color: #5EE6FF; line-height: 1; text-shadow: 0 0 14px rgba(94,230,255,0.35); }
+  .hero-num .l { font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: #9FB6BC; margin-top: 6px; }
+  .hero-num .d { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #5EE6FF; margin-top: 4px; }
+
+  .deptlist { padding: 14px 16px; border-bottom: 1px solid rgba(94,230,255,0.1); }
+  .deptlist .h { font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: #6E8790; margin-bottom: 10px; }
+  .deptrow { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; }
+  .deptrow .n { font-size: 13.5px; color: #D7E6E9; }
+  .deptrow .v { font-family: 'JetBrains Mono', monospace; font-size: 15px; color: #5EE6FF; font-weight: 500; }
+
+  .chartblock { padding: 16px; }
+  .chartblock .h { font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: #6E8790; margin-bottom: 12px; }
+  .chartblock .foot { display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace; font-size: 8.5px; color: #4C6169; margin-top: 6px; }
+
+  .centerhead { text-align: center; padding: 18px 0 6px; }
+  .centerhead h1 { font-family: 'Michroma', sans-serif; font-size: 17px; margin: 0; letter-spacing: 0.04em; color: #EAF6F8; }
+  .centerhead h1 span { color: #5EE6FF; }
+  .statrow { display: flex; justify-content: center; gap: 26px; margin-top: 9px; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #6E8790; letter-spacing: 0.05em; }
+  .statrow b { color: #5EE6FF; font-weight: 600; }
+
+  .nodestrip { display: grid; grid-template-columns: repeat(6, 1fr); gap: 1px; background: rgba(94,230,255,0.1); margin: 16px 20px 4px; }
+  .nodestrip .n { background: #0a1116; padding: 9px 8px; text-align: center; }
+  .nodestrip .n .val { font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 600; color: #5EE6FF; }
+  .nodestrip .n .nl { font-family: 'JetBrains Mono', monospace; font-size: 7.5px; letter-spacing: 0.04em; text-transform: uppercase; color: #9FB6BC; margin-top: 3px; }
+
+  .curvewrap { position: relative; padding: 8px 24px 4px; }
+  .curvewrap svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .popdot { cursor: pointer; transition: r 0.1s, opacity 0.1s; }
+  .popdot:hover { opacity: 1 !important; }
+  .catlabels { display: flex; justify-content: space-between; padding: 2px 24px 4px; font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.04em; text-transform: uppercase; color: #6E8790; }
+  .catlabels div { text-align: center; flex: 1; }
+  .catlabels div b { display: block; color: #9FB6BC; font-size: 8px; font-weight: 400; margin-top: 2px; }
+  .legend { text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #45585e; margin-top: 4px; letter-spacing: 0.03em; }
+
+  .tooltip { position: fixed; pointer-events: none; background: #0a1116; border: 1px solid rgba(94,230,255,0.4); padding: 6px 10px; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #EAF6F8; opacity: 0; transition: opacity 0.08s; z-index: 50; white-space: nowrap; }
+  .tooltip .sc { color: #5EE6FF; margin-left: 6px; }
+  .tooltip .sg { color: #6E8790; margin-left: 6px; }
+
+  .inspector { margin: 14px 20px 18px; border: 1px solid rgba(94,230,255,0.18); background: rgba(94,230,255,0.03); padding: 16px 18px; }
+  .inspector .empty { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #4C6169; text-align: center; padding: 8px 0; }
+  .inspector .row1 { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+  .inspector .nm { font-size: 17px; font-weight: 600; color: #EAF6F8; }
+  .inspector .meta { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #6E8790; margin-top: 3px; }
+  .inspector .bignum { font-family: 'JetBrains Mono', monospace; font-size: 26px; font-weight: 600; color: #5EE6FF; text-align: right; }
+  .inspector .badges { display: flex; gap: 8px; margin-bottom: 14px; }
+  .inspector .badge { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.04em; text-transform: uppercase; padding: 3px 8px; border: 1px solid rgba(94,230,255,0.35); color: #5EE6FF; }
+  .inspector .bars div.bl { display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #9FB6BC; margin-bottom: 3px; }
+  .inspector .bars .track { height: 3px; background: rgba(94,230,255,0.12); margin-bottom: 10px; position: relative; }
+  .inspector .bars .track i { position: absolute; left: 0; top: 0; height: 100%; background: #5EE6FF; }
+
+  .tabbar { display: flex; justify-content: center; gap: 30px; padding: 16px 0 18px; border-top: 1px solid rgba(94,230,255,0.12); margin-top: 4px; }
+  .tabbar span { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: #55666C; }
+  .tabbar span.on { color: #EAF6F8; font-weight: 600; }
+</style>
+
+<div class="stage">
+  <div class="cols">
+
+    <div class="win">
+      <div class="titlebar"><span class="t">Org readiness</span><span class="win-icons">─&nbsp;&#9633;&nbsp;×</span></div>
+      <div class="hero-num">
+        <div class="v">3.6</div>
+        <div class="l">Readiness index</div>
+        <div class="d">+0.4 vs pre-assessment</div>
+      </div>
+      <div class="deptlist">
+        <div class="h">Departments</div>
+        <div class="deptrow"><span class="n">Engineering</span><span class="v">4.2</span></div>
+        <div class="deptrow"><span class="n">Sales</span><span class="v">3.8</span></div>
+        <div class="deptrow"><span class="n">Marketing</span><span class="v">3.3</span></div>
+        <div class="deptrow"><span class="n">HR</span><span class="v">2.9</span></div>
+        <div class="deptrow"><span class="n">Finance</span><span class="v">2.5</span></div>
+      </div>
+      <div class="chartblock">
+        <div class="h">Segment mix — 42 respondents</div>
+        <svg viewBox="0 0 240 70" width="100%" height="70">
+          <g fill="#5EE6FF" opacity="0.85">
+            <rect x="6" y="42" width="34" height="22"/><rect x="52" y="30" width="34" height="34"/>
+            <rect x="98" y="10" width="34" height="54"/><rect x="144" y="26" width="34" height="38"/>
+            <rect x="190" y="48" width="34" height="16"/>
+          </g>
+        </svg>
+        <div class="foot"><span>LAG</span><span>LATE</span><span>EARLY MAJ</span><span>ADOPT</span><span>INNOV</span></div>
+      </div>
+    </div>
+
+    <div class="win">
+      <div class="centerhead">
+        <h1>READINESS STATUS / <span>AIM</span></h1>
+        <div class="statrow">
+          <div>INDEX <b>3.6</b></div>
+          <div>RESPONDENTS <b>42</b></div>
+          <div>SYNCED <b>2M AGO</b></div>
+        </div>
+      </div>
+
+      <div class="nodestrip">
+        <div class="n"><div class="val">42</div><div class="nl">Assessed</div></div>
+        <div class="n"><div class="val">3.6</div><div class="nl">Avg score</div></div>
+        <div class="n"><div class="val">5</div><div class="nl">Depts</div></div>
+        <div class="n"><div class="val">18</div><div class="nl">Enabled</div></div>
+        <div class="n"><div class="val">15</div><div class="nl">Augmented</div></div>
+        <div class="n"><div class="val">9</div><div class="nl">Superpwr</div></div>
+      </div>
+
+      <div class="curvewrap">
+        <svg id="curveSvg" viewBox="0 0 860 300" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="fillGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#5EE6FF" stop-opacity="0.28"/>
+              <stop offset="100%" stop-color="#5EE6FF" stop-opacity="0"/>
+            </linearGradient>
+            <radialGradient id="comet" r="65%">
+              <stop offset="0%" stop-color="#EAFBFF" stop-opacity="0.95"/>
+              <stop offset="60%" stop-color="#5EE6FF" stop-opacity="0.35"/>
+              <stop offset="100%" stop-color="#5EE6FF" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+          <line x1="10" y1="250" x2="850" y2="250" stroke="rgba(94,230,255,0.15)" stroke-width="1"/>
+          <path id="fillPath" fill="url(#fillGrad)" stroke="none"/>
+          <path id="curvePath" fill="none" stroke="#5EE6FF" stroke-width="2.4" style="filter: drop-shadow(0 0 4px rgba(94,230,255,0.5));"/>
+          <g id="popDots"></g>
+          <circle id="comet" r="9" fill="url(#comet)" style="pointer-events:none;"/>
+        </svg>
+      </div>
+      <div class="catlabels">
+        <div>Laggards<b>16%</b></div>
+        <div>Late majority<b>34%</b></div>
+        <div>Early majority<b>34%</b></div>
+        <div>Early adopters<b>13.5%</b></div>
+        <div>Innovators<b>2.5%</b></div>
+      </div>
+      <div class="legend">Hover a point for a quick read · click for the full breakdown</div>
+
+      <div class="inspector" id="inspector">
+        <div class="empty">Click any point on the curve to inspect that respondent</div>
+      </div>
+
+      <div class="tabbar">
+        <span class="on">Home</span><span>Assessment</span><span>Scoring</span><span>Reports</span><span>Teams</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+(function() {
+  var W = 860, H = 300, baseY = 250, marginX = 10, spanX = W - marginX * 2, maxRise = 205;
+
+  var segments = [
+    { start: 0, end: 0.08, h: 0.35 },
+    { start: 0.08, end: 0.25, h: 0.65 },
+    { start: 0.25, end: 0.62, h: 1.0 },
+    { start: 0.62, end: 0.88, h: 1.0 },
+    { start: 0.88, end: 1.0, h: 0.55 }
+  ];
+  function curveHeight(x) {
+    for (var i = 0; i < segments.length; i++) {
+      var s = segments[i];
+      if (x >= s.start && x <= s.end) {
+        var t = (x - s.start) / (s.end - s.start);
+        return s.h * Math.sin(t * Math.PI);
+      }
+    }
+    return 0;
+  }
+  function xAt(frac) { return marginX + frac * spanX; }
+  function yAt(frac) { return baseY - curveHeight(frac) * maxRise; }
+
+  var d = 'M ' + xAt(0) + ' ' + baseY;
+  var steps = 200;
+  for (var i = 0; i <= steps; i++) {
+    var f = i / steps;
+    d += ' L ' + xAt(f).toFixed(1) + ' ' + yAt(f).toFixed(1);
+  }
+  document.getElementById('curvePath').setAttribute('d', d);
+  document.getElementById('fillPath').setAttribute('d', d + ' L ' + xAt(1) + ' ' + baseY + ' Z');
+
+  // ---- generate 42 real (fake) respondent records, banded by segment ----
+  var firstNames = ['Jordan','Maya','Chris','Sarah','Tom','Lisa','Marcus','Anna','Priya','Diego','Nora','Sam','Elena','Kwame','Ruth','Omar','Ivy','Leo','Zara','Felix'];
+  var lastNames = ['Ellis','Patel','Wong','Kim','Bradley','Chen','Johnson','Lopez','Singh','Ruiz','Novak','Adeyemi','Park','Fischer','Silva','Nguyen','Brooks','Costa','Hale','Reyes'];
+  var depts = ['Engineering','Sales','Marketing','HR','Finance'];
+  var segBands = [
+    { seg: 'Laggard',        range: [0.02, 0.17], score: [1.0, 2.2], count: 7 },
+    { seg: 'Late majority',  range: [0.18, 0.40], score: [2.3, 2.9], count: 13 },
+    { seg: 'Early majority', range: [0.41, 0.64], score: [3.0, 3.6], count: 14 },
+    { seg: 'Early adopter',  range: [0.65, 0.84], score: [3.7, 4.2], count: 6 },
+    { seg: 'Innovator',      range: [0.85, 0.97], score: [4.3, 4.9], count: 2 }
+  ];
+  var pathwayFor = { 'Laggard': 'Enabled', 'Late majority': 'Enabled', 'Early majority': 'Augmented', 'Early adopter': 'Superpowered', 'Innovator': 'Superpowered' };
+
+  function rand(a, b) { return a + Math.random() * (b - a); }
+  function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+  var people = [];
+  segBands.forEach(function(band) {
+    for (var i = 0; i < band.count; i++) {
+      var frac = rand(band.range[0], band.range[1]);
+      var score = rand(band.score[0], band.score[1]);
+      people.push({
+        name: pick(firstNames) + ' ' + pick(lastNames),
+        dept: pick(depts),
+        seg: band.seg,
+        pathway: pathwayFor[band.seg],
+        score: score,
+        trust: Math.min(5, Math.max(1, score + rand(-0.4, 0.4))),
+        willingness: Math.min(5, Math.max(1, score + rand(-0.4, 0.4))),
+        prep: Math.min(5, Math.max(1, score + rand(-0.5, 0.3))),
+        frac: frac
+      });
+    }
+  });
+
+  var dotsG = document.getElementById('popDots');
+  var tooltip = document.getElementById('tooltip');
+  var inspector = document.getElementById('inspector');
+
+  people.forEach(function(p) {
+    var jitter = rand(0.2, 0.9);
+    var h = curveHeight(p.frac) * jitter;
+    var x = xAt(p.frac), y = baseY - h * maxRise - rand(0, 5);
+    var c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    c.setAttribute('cx', x.toFixed(1));
+    c.setAttribute('cy', y.toFixed(1));
+    c.setAttribute('r', 3.6);
+    c.setAttribute('fill', '#5EE6FF');
+    c.setAttribute('opacity', (0.55 + Math.random() * 0.35).toFixed(2));
+    c.setAttribute('class', 'popdot');
+    c.addEventListener('mouseenter', function(e) {
+      c.setAttribute('r', 6);
+      tooltip.innerHTML = '<b>' + p.name + '</b><span class="sg">' + p.seg + '</span><span class="sc">' + p.score.toFixed(2) + '</span>';
+      tooltip.style.opacity = 1;
+    });
+    c.addEventListener('mousemove', function(e) {
+      tooltip.style.left = (e.clientX + 14) + 'px';
+      tooltip.style.top = (e.clientY - 10) + 'px';
+    });
+    c.addEventListener('mouseleave', function() {
+      c.setAttribute('r', 3.6);
+      tooltip.style.opacity = 0;
+    });
+    c.addEventListener('click', function() {
+      document.querySelectorAll('.popdot').forEach(function(o){ o.setAttribute('stroke', 'none'); });
+      c.setAttribute('stroke', '#EAFBFF'); c.setAttribute('stroke-width', 1.5);
+      inspector.innerHTML =
+        '<div class="row1"><div><div class="nm">' + p.name + '</div><div class="meta">' + p.dept + ' &middot; ' + p.seg + '</div></div><div class="bignum">' + p.score.toFixed(2) + '</div></div>' +
+        '<div class="badges"><span class="badge">' + p.seg + '</span><span class="badge">' + p.pathway + '</span></div>' +
+        '<div class="bars">' +
+          bar('Trust', p.trust) + bar('Willingness', p.willingness) + bar('Preparedness', p.prep) +
+        '</div>';
+    });
+    dotsG.appendChild(c);
+  });
+
+  function bar(label, val) {
+    return '<div class="bl"><span>' + label + '</span><span>' + val.toFixed(1) + '</span></div>' +
+           '<div class="track"><i style="width:' + (val / 5 * 100) + '%"></i></div>';
+  }
+
+  // traveling scan-light along the actual curve path
+  var pathEl = document.getElementById('curvePath');
+  var comet = document.getElementById('comet');
+  var len = pathEl.getTotalLength();
+  var t0 = null;
+  function frame(ts) {
+    if (!t0) t0 = ts;
+    var elapsed = (ts - t0) / 1000;
+    var cycle = 6;
+    var p = (elapsed % cycle) / cycle;
+    var eased = p < 0.5 ? p * 2 : 2 - p * 2;
+    var pt = pathEl.getPointAtLength(eased * len);
+    comet.setAttribute('cx', pt.x);
+    comet.setAttribute('cy', pt.y);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
