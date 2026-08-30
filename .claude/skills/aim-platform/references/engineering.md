@@ -26,6 +26,15 @@ tab the original prototype had is ported and DB-backed:
   **every** PRD §4 model, not just the ones with a UI yet.
 - `supabase/migrations/0002_tier1_review_log.sql` — `goal_review_entries`,
   added for build phase 4 (Tier 1 manual-entry forms).
+- `supabase/migrations/0003_integrations_registry.sql` — extends
+  `public.integrations` with `config`/`access_token`/`refresh_token`/
+  `token_expires_at`, matching PRD §6.2's fuller description. Token columns
+  are explicitly plaintext-placeholder (see the migration's column
+  comments) — no real vendor OAuth flow exists to populate them yet.
+- `src/lib/integrations/registry.ts` — the Integrations Registry pattern
+  itself: a typed, currently-**empty** `CONNECTOR_REGISTRY`. Adding a real
+  vendor connector is a code change here (plus wiring its "Connect" button's
+  OAuth-start route), not a runtime setting.
 - Real auth: Supabase Auth, email/password (hashed) **and** Google/Microsoft
   SSO — resolves the PRD §7 open question. New signups default to `viewer`
   role via a Postgres trigger; a superadmin/hradmin promotes from Teams.
@@ -34,14 +43,15 @@ tab the original prototype had is ported and DB-backed:
 Assessment (`src/app/(app)/survey/`), Assessment Builder (`assessments/`),
 Scoring Engine (`scoring-engine/`), Dashboard (`dashboard/`), Reports
 (`reports/`), Teams (`teams/`), Transformation Goals (`goals/`, plus its
-Tier 1 review log), and Nudges (`nudges/`). `src/components/NotMigrated.tsx`
-is now unused.
+Tier 1 review log), Nudges (`nudges/`), Workflows (`workflows/`), and the
+Integrations tab (`integrations/` — framework only, see below).
+`src/components/NotMigrated.tsx` is now unused.
 
-**Not built:** the **Workflows** tab (referenced in PRD §3's nav, has a
-mockup at `design/active/workflows-interventions.html`, but was never
-implemented even in the original prototype — a pre-existing gap, not one of
-§6.3's numbered phases) and the **Integrations registry** (phase 6, schema
-reserved, no UI, no vendor chosen) → **deep integrations** (phase 7).
+**Not built:** any actual **vendor connector** for Integrations — the
+registry framework is real and functional, but `CONNECTOR_REGISTRY` is
+empty because no vendor has been chosen (PRD §6.2/§7). **Deep system
+integrations** (Tier 3, phase 7) come after that. Nothing here has been
+deployed to a live Vercel/Supabase project or browser-tested — see §6.2.
 
 `prototype/App.jsx` (moved from `app/App.jsx` — the App Router needed that
 path) is the original browser-only artifact: `window.storage`, plaintext
@@ -59,12 +69,13 @@ only as design history; don't extend it.
 - **Backend + DB:** Supabase (Postgres + Auth) — schema and auth are real
   now (see above), but only against whatever Supabase project the `.env`
   points at; nothing is provisioned by this codebase itself.
-- **Integrations registry:** a `connectors` table (vendor, auth config,
-  field mappings) + OAuth token storage (encrypted) + a scheduled sync
-  worker per connector. Schema exists (`public.integrations`); the
-  admin-facing "Integrations" tab, Connect/Disconnect UI, and all connector
-  logic are still unbuilt — **no vendor has been chosen**, so don't build a
-  specific connector speculatively.
+- **Integrations registry:** ✅ framework done — `public.integrations` (vendor,
+  auth config, field mappings, OAuth token columns) + `CONNECTOR_REGISTRY`
+  + a real Integrations tab with a functional Disconnect action. The
+  "scheduled sync worker per connector" part is still notional — there's
+  nothing to schedule syncing for until a real connector exists. **No
+  vendor has been chosen**, so still don't build a specific connector
+  speculatively; that's the one piece deliberately left undone.
 - **Scoring engine:** ✅ done — `src/lib/anthropic.ts`'s `scoreTextAnswer`
   runs server-side, called from the `submitAssessment` Server Action in
   `src/app/(app)/survey/actions.ts`, using `ANTHROPIC_API_KEY` from `.env`.
@@ -102,15 +113,24 @@ happened, not the PRD's original numbering.
    (`0002_tier1_review_log.sql`) plus a review-log UI on each Tier 1 goal's
    detail view, rather than stretching `currentValue` to cover something it
    wasn't shaped for.
-7. **Next up:** stand up a real Vercel + Supabase project and browser-test
-   the app — nothing has run outside `npm run build` so far, and the
-   Workflows tab gap (see 6.1) is still open.
-8. Build the **Integrations registry** + first vendor connector (Tier 2) —
-   prioritize by which vendor the client actually uses first, not
-   speculative build-all. Schema reserved (`public.integrations`); **no
-   vendor chosen, no UI built.**
+7. ✅ Build the **Workflows** tab (referenced in PRD §3's nav, mocked but
+   never built — a pre-existing gap, not one of §6.3's numbered phases).
+   Real Kanban over the already-existing `workflows` schema; stage
+   advancement is always a manual admin action and `adoptionThreshold`
+   stays per-workflow-editable, so neither of §7's two open Workflows
+   questions got silently resolved by the implementation.
+8. ✅ Build the **Integrations registry framework** (no vendor connector —
+   explicit user decision). `public.integrations` extended to match PRD
+   §6.2's fuller shape, `CONNECTOR_REGISTRY` pattern, real Integrations tab.
+   **Still not done:** the first actual vendor connector — depends on which
+   vendor the client uses, still unchosen — and deep system integrations
+   (Tier 3, next).
 9. Build **deep system integrations** (Tier 3) — last, highest cost,
    benefits from patterns proven in step 8. **Not started.**
+10. Stand up a real Vercel + Supabase project and browser-test the app —
+    nothing here has run outside `npm run build`/`typecheck`/`lint` so far.
+    This is arguably more urgent than steps 8-9 for anyone about to demo
+    this to the client.
 
 ## 6.4 Process going forward
 

@@ -62,16 +62,20 @@ Take Assessment, Assessment Builder, Scoring Engine, Dashboard, Reports,
 Teams, and Transformation Goals (now also with a Tier 1 manual-review log on
 top). Nudges (phase 3) is also built: admin-authored on the Nudges tab, with
 actual response collection living on the Dashboard's "Nudges for you" widget
-since PRD §3 keeps the Nudges tab itself admin-only. `src/components/
+since PRD §3 keeps the Nudges tab itself admin-only. The **Workflows** tab
+(referenced in PRD §3's nav, mocked but never actually built — a
+pre-existing gap, not a numbered PRD phase) is also real now: a Kanban board
+where stage advancement is always a manual admin action, never automatic
+(PRD §7 leaves auto-vs-approved paving unresolved). The **Integrations
+registry framework** (phase 6) is real too — schema, a typed connector
+registry, a working admin tab — but `src/lib/integrations/registry.ts`'s
+registry is deliberately empty, since no vendor is chosen. `src/components/
 NotMigrated.tsx` is now unused — nothing points to it anymore.
 
-**Not built:** the **Workflows** tab. It's referenced in PRD §3's nav table
-and has a mockup (`design/active/workflows-interventions.html`), but was
-never implemented even in the original prototype — this is a pre-existing
-gap, not one of PRD §6.3's numbered phases. The **Integrations registry**
-(phase 6) and **deep integrations** (phase 7) are also still ahead — schema
-for Integrations is reserved in `supabase/migrations/0001_init.sql`, no UI,
-no vendor chosen.
+**Not built:** an actual vendor connector for Integrations (blocked on the
+vendor decision) and **deep integrations** (Tier 3, phase 7), which depends
+on it. Also: nothing here has been deployed to a live Vercel/Supabase
+project or tested in a browser — only `npm run build`/`typecheck`/`lint`.
 
 `prototype/App.jsx` (moved from the old `app/App.jsx` — Next.js's App Router
 needed that path) is the **original browser-only artifact prototype**:

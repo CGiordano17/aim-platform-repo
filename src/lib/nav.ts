@@ -12,6 +12,7 @@ export const NAV_ITEMS: { id: string; label: string; href: string }[] = [
   { id: "workflows", label: "Workflows", href: "/workflows" },
   { id: "goals", label: "Transformation Goals", href: "/goals" },
   { id: "teams", label: "Teams", href: "/teams" },
+  { id: "integrations", label: "Integrations", href: "/integrations" },
   { id: "config", label: "Config", href: "/config" },
 ];
 
@@ -33,5 +34,6 @@ export const TAB_PERMS: Record<string, AppRole[]> = {
   // role to update a goal's currentValue, same as the prototype.
   goals: ["superadmin", "hradmin", "manager", "viewer"],
   teams: ["superadmin", "hradmin"],
+  integrations: ["superadmin"],
   config: ["superadmin"],
 };

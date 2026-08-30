@@ -92,25 +92,34 @@ Exists because Tier 1's "manual tagging / expert review" mechanism (PRD
 ### Integration — *not yet built*
 ```
 { id, vendorName, authType: 'oauth', status: 'connected'|'disconnected',
-  scopes: string[], connectedAt?, lastSync?, syncedMetrics: string[] }
+  scopes: string[], connectedAt?, lastSync?, syncedMetrics: string[],
+  config,                       // added build phase 6: auth config / field mappings
+  accessToken?, refreshToken?, tokenExpiresAt? }  // added build phase 6 — NOT encrypted yet, see 0003's column comments
 ```
+`CONNECTOR_REGISTRY` in `src/lib/integrations/registry.ts` is the actual
+vendor-agnostic registry (PRD §6.2) this table's rows get created against —
+currently empty, since no vendor is chosen.
 
 ## Where these live today
 
 Every model above has a real Postgres table + RLS policy in
 `supabase/migrations/0001_init.sql`. As of build phases 3-6 (see
 `references/engineering.md`), **Profile, Question, Respondent,
-TransformationGoal, and Nudge/NudgeResponse all have real UI and real data
-flowing through them.** TransformationGoal also has a Tier-1-only companion
-table, `goal_review_entries` (`0002_tier1_review_log.sql`), not in the PRD §4
-shape above — a log of individual manual-review events, since Tier 1's
-"expert review" mechanism doesn't fit a single overwritable `currentValue`.
+TransformationGoal, Nudge/NudgeResponse, and Workflow all have real UI and
+real data flowing through them.** TransformationGoal also has a
+Tier-1-only companion table, `goal_review_entries` (`0002_tier1_review_log.sql`),
+not in the PRD §4 shape above — a log of individual manual-review events,
+since Tier 1's "expert review" mechanism doesn't fit a single overwritable
+`currentValue`.
 
-**Workflow and Intervention** have schema but no UI — the Workflows tab is a
-pre-existing gap (referenced in PRD §3's nav, has a mockup, was never built
-even in the original prototype), and Interventions ride along with it since
-nothing surfaces them yet either. **Integration** has schema but no UI and
-no logic (build phase 6, no vendor chosen — see `references/engineering.md`).
+**Integration** has real schema, a real registry pattern
+(`CONNECTOR_REGISTRY`), and a real admin tab with a functional Disconnect
+action — but no actual vendor connector, since none is chosen (build phase
+6's one deliberately-unfinished piece).
+
+**Intervention** is the one model with schema but genuinely no UI — it rode
+along with Workflows in the original PRD §4 grouping, but wasn't part of
+the Workflows-tab build and has no dedicated request to build it yet.
 
 `prototype/App.jsx` is no longer a live reference for anything — every tab
 it had is ported. Keep it only as design history.
