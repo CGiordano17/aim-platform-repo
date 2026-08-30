@@ -1,0 +1,51 @@
+import type { Question } from "@/lib/types";
+
+// The client's real AIM Readiness assessment questions (Trust / Willingness /
+// Prep — Foundations / Prep — Workflow dimensions), transcribed from
+// prototype/App.jsx's AIM_QUESTIONS_SEED — not placeholder content.
+export const QUESTIONS_SEED: Question[] = [
+  { id: "q1", code: "AIMT01", dimension: "Trust", text: "I believe that AI can enhance productivity and decision-making in my professional role.", type: "likert", phase: "both", required: true },
+  { id: "q2", code: "AIMT02", dimension: "Trust", text: "AI-driven outputs can meet or exceed the quality standards expected in my organization.", type: "likert", phase: "both", required: true },
+  { id: "q3", code: "AIMT03", dimension: "Trust", text: "I trust AI to provide factual and accurate information.", type: "likert", phase: "both", required: true },
+  { id: "q4", code: "AIMT04", dimension: "Trust", text: "I believe that AI systems can make decisions and provide written information that is impartial, without bias, towards any group.", type: "likert", phase: "both", required: true },
+  { id: "q5", code: "AIMT05", dimension: "Trust", text: "I trust that AI technologies can be designed to consistently perform as intended with minimal errors.", type: "likert", phase: "both", required: true },
+  { id: "q6", code: "AIMT06", dimension: "Trust", text: "I believe AI is, or can be designed to, consider diverse perspectives and needs in its decision-making or written information.", type: "likert", phase: "both", required: true },
+  { id: "q7", code: "AIMT07", dimension: "Trust", text: "I trust that AI systems are, or can be designed to be, secure and protect sensitive information.", type: "likert", phase: "both", required: true },
+  { id: "q8", code: "AIMT08", dimension: "Trust", text: "I believe that AI systems are, or may be designed to be, forthcoming with the sources of information they are using.", type: "likert", phase: "both", required: true },
+  { id: "q9", code: "AIMT09", dimension: "Trust", text: "I believe it is possible to create accountability measures around AI systems.", type: "likert", phase: "both", required: true },
+  { id: "q10", code: "AIMW01", dimension: "Willingness", text: "I actively seek, consider, or envision ways to integrate AI into my work.", type: "likert", phase: "both", required: true },
+  { id: "q11", code: "AIMW02", dimension: "Willingness", text: "If an AI tool was made available to me by my employer, I would try to use it immediately.", type: "likert", phase: "both", required: true },
+  { id: "q12", code: "AIMW03", dimension: "Willingness", text: "Seeing and hearing about others using AI around me, including at my place of employment, increases my willingness to try it.", type: "likert", phase: "both", required: true },
+  { id: "q13", code: "AIMW04", dimension: "Willingness", text: "I believe the skills required to use AI are, or will soon be, critical for my career growth, performance, or stability.", type: "likert", phase: "both", required: true },
+  { id: "q14", code: "AIMW05", dimension: "Willingness", text: "I would only use AI in my profession if there was an expectation from my employer.", type: "likert", phase: "both", required: true },
+  { id: "q15", code: "AIMW06", dimension: "Willingness", text: "Actively using or progressing AI adoption within my organization will lead to efficiencies within my organization.", type: "likert", phase: "both", required: true },
+  { id: "q16", code: "AIMPF01", dimension: "Prep — Foundations", text: "I can describe the capabilities of AI technologies today and how they can augment or replace the tasks or work that a human would otherwise perform.", type: "likert", phase: "both", required: true },
+  { id: "q17", code: "AIMPF02", dimension: "Prep — Foundations", text: "I can identify valuable tasks or use cases for AI assistance within my day-to-day workflow.", type: "likert", phase: "both", required: true },
+  { id: "q18", code: "AIMPF03", dimension: "Prep — Foundations", text: "I can select the best AI tool or model for a particular task when multiple tools or versions are available.", type: "likert", phase: "both", required: true },
+  { id: "q19", code: "AIMPF04", dimension: "Prep — Foundations", text: "I can effectively write and chain multi-step, structured prompts to achieve complex, layered outputs thus meeting my personal and professional standards for use.", type: "likert", phase: "both", required: true },
+  { id: "q20", code: "AIMPF05", dimension: "Prep — Foundations", text: "I can provide an AI system or tool with the appropriate context to understand my needs comprehensively and therefore generate acceptable outputs earlier.", type: "likert", phase: "both", required: true },
+  { id: "q21", code: "AIMPF06", dimension: "Prep — Foundations", text: "I can evaluate AI-generated outputs for accuracy and trustworthiness before applying within my work.", type: "likert", phase: "both", required: true },
+  { id: "q22", code: "AIMPF07E", dimension: "Prep — Foundations", text: "I can protect personal, employer, and client confidentiality of my information when using AI.", type: "likert", phase: "both", required: true },
+  { id: "q23", code: "AIMPF08E", dimension: "Prep — Foundations", text: "I can detect bias within an AI output before applying this in a personal or professional setting.", type: "likert", phase: "both", required: true },
+  { id: "q24", code: "AIMPF09", dimension: "Prep — Foundations", text: "I can maintain the intellectual property of others when using AI in a personal or professional setting.", type: "likert", phase: "both", required: true },
+  { id: "q25", code: "AIMPF10", dimension: "Prep — Foundations", text: "I can use AI to generate original content (such as code, images, presentations) that achieves my personal or professional standards.", type: "likert", phase: "both", required: true },
+  { id: "q26", code: "AIMPF11", dimension: "Prep — Foundations", text: "I can use AI to reduce the time I spend on routine or administrative tasks.", type: "likert", phase: "both", required: true },
+  { id: "q27", code: "AIMPF12", dimension: "Prep — Foundations", text: "I can use AI to improve the quality of my work by providing feedback or review.", type: "likert", phase: "both", required: true },
+  { id: "q28", code: "AIMPF13", dimension: "Prep — Foundations", text: "I can explain the capabilities of GenAI and how this technology compares to other forms of AI and or Machine Learning.", type: "likert", phase: "both", required: true },
+  { id: "q29", code: "AIMPW01", dimension: "Prep — Workflow", text: "I can use AI to complete a singular task that I would have typically completed myself.", type: "likert", phase: "both", required: true },
+  { id: "q30", code: "AIMPW02", dimension: "Prep — Workflow", text: "I can design AI workflows to perform several, interconnected tasks, meeting my personal or professional standards.", type: "likert", phase: "both", required: true },
+  { id: "q31", code: "AIMPW03", dimension: "Prep — Workflow", text: "I can break down a complex task into smaller steps that AI can assist with.", type: "likert", phase: "both", required: true },
+  { id: "q32", code: "AIMPW05", dimension: "Prep — Workflow", text: "I can chain the output from one AI tool as the input to another AI tool without losing context, intent, or meaning.", type: "likert", phase: "both", required: true },
+  { id: "q33", code: "AIMPW06", dimension: "Prep — Workflow", text: "I can use AI to synthesize insights from multiple sources or data inputs, and it meets my personal or professional standards.", type: "likert", phase: "both", required: true },
+  { id: "q34", code: "AIMPW07", dimension: "Prep — Workflow", text: "I can integrate AI tools into my existing systems or platforms with efficiency.", type: "likert", phase: "both", required: true },
+  { id: "q35", code: "AIMPW08E", dimension: "Prep — Workflow", text: "I can proactively identify failure points or risks when integrating AI across multiple steps.", type: "likert", phase: "both", required: true },
+  {
+    id: "q36", code: "AIMPC01", dimension: "Prep — Foundations", text: "How often do you currently use an AI tool in a typical work week?", type: "multiple_choice", phase: "both", required: true,
+    options: ["Never", "Rarely (a few times a month)", "Sometimes (weekly)", "Often (most days)", "Constantly (multiple times a day)"],
+    optionScores: [1, 2, 3, 4, 5],
+  },
+  {
+    id: "q37", code: "AIMPW09", dimension: "Prep — Workflow", text: "Describe a specific task you've used AI for recently, and what you had to do to get a usable result.", type: "text", phase: "both", required: true,
+    scoringPrompt: "Score this response 1 (low) to 5 (high) on how much genuine hands-on AI workflow experience it demonstrates: does it name a real, specific task, describe concrete steps or iteration, and show understanding of what made the output usable? Vague or generic answers score low; specific, detailed ones score high.",
+  },
+];

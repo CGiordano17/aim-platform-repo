@@ -260,12 +260,21 @@ Category color (shown on column headers) and tier color (shown on card left-bord
 - **Scoring engine:** the text-answer LLM scoring call (Claude) must move server-side in production (currently client-side in the prototype) to protect API keys and add retry/rate-limit handling.
 
 ### 6.3 Build sequence
+**Note (2026-08-30): executed out of the order below.** The backend/auth
+migration (originally step 5) was pulled forward at the user's request, done
+immediately after step 2, ahead of Nudges and Tier-1 forms — because the
+user wanted a real standalone application, not continued artifact-prototype
+iteration. Steps below are kept in their original numbering for continuity
+with the rest of this document, but treat `README.md`'s "Next steps"
+section and the aim-platform skill's `references/engineering.md` as the
+current source of truth for what's actually done.
+
 1. ✅ Consolidate this spec (current step).
-2. ✅ Add **Transformation Goals** as a real data model in the current prototype (still `window.storage`), editable `currentValue` by hand for every tier — makes the ROI ladder live instead of static. Seed content is the client's real ROI grid (19 goals across all 4 categories × 4 tiers), transcribed from `design/active/roi-ladder.html` into `app/App.jsx`, not placeholder data. `currentValue` seeds as `null` on every goal — the `roiExample` strings are the client's own illustrative case-study language, not this org's live numbers, so a fabricated starting value would misrepresent them as real.
-3. Build **Nudges** tab; wire Tier 0 goals to real Nudge response data and existing Readiness scores (no new infra needed — data already flows through the app).
-4. Add manual-entry admin forms for Tier 1 goals.
-5. Migrate off `window.storage` to the real backend (Vercel + Supabase) — this is also when real auth replaces plaintext passcodes.
-6. Build the Integrations registry + first vendor connector (Tier 2) — prioritize by which vendor the client actually uses first, not speculative build-all.
+2. ✅ Add **Transformation Goals** as a real data model — first in the prototype (still `window.storage`), editable `currentValue` by hand for every tier — makes the ROI ladder live instead of static. Seed content is the client's real ROI grid (19 goals across all 4 categories × 4 tiers), transcribed from `design/active/roi-ladder.html` — not placeholder data. `currentValue` seeds as `null` on every goal — the `roiExample` strings are the client's own illustrative case-study language, not this org's live numbers, so a fabricated starting value would misrepresent them as real.
+3. Build **Nudges** tab; wire Tier 0 goals to real Nudge response data and existing Readiness scores. **Blocked**, not started — needs real Respondent data, which needs Take Assessment ported first (see step 5 below).
+4. Add manual-entry admin forms for Tier 1 goals. Not started.
+5. ✅ **Migrate off `window.storage` to the real backend** (Next.js + Supabase, hosting on Vercel) — done, pulled forward ahead of steps 3-4. Real auth (email/password + SSO) replaces plaintext passcodes. Full schema + RLS for every §4 data model exists in `supabase/migrations/0001_init.sql`; only Transformation Goals has a real, DB-backed UI so far — Dashboard, Assessment Builder, Take Assessment, Scoring Engine, Reports, and Teams are still unported stubs (`prototype/App.jsx` has the reference implementation). Verified with `npm run build`/`typecheck`/`lint`; not yet deployed to a live Vercel/Supabase project, not yet browser-tested.
+6. Build the Integrations registry + first vendor connector (Tier 2) — prioritize by which vendor the client actually uses first, not speculative build-all. Schema reserved (`public.integrations`); no vendor chosen, no UI built.
 7. Build deep system integrations (Tier 3) — token telemetry, compliance logging, cross-system models — last, since it's the highest cost and benefits from patterns proven in step 6.
 
 ### 6.4 Process going forward
@@ -297,7 +306,7 @@ Prior mockups produced during design exploration (for historical reference — s
 
 | Artifact | What it explored |
 |---|---|
-| `aim-platform.jsx` | Full working prototype: survey flow, live scoring, storage-backed persistence, role-gated login |
+| `prototype/App.jsx` | Full working prototype: survey flow, live scoring, storage-backed persistence, role-gated login. Superseded by the real app in `src/` as of the phase-5 migration for anything already ported (currently just Transformation Goals) — still the reference for what isn't ported yet. |
 | `design-directions.html` | Three early visual directions (Instrument Panel, Field Notebook, Diffusion Spectrum) |
 | `hud-direction.html`, `layout-options.html`, `typography-options.html` | JARVIS/HUD visual refinement — palette, layout skeletons, typography pairings |
 | `jarvis-mockup-v2/v3/v4.html` | Hero visualization evolution: 3D globe → animated Rogers curve → fully interactive per-respondent curve |

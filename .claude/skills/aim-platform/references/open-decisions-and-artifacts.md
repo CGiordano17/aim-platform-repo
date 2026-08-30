@@ -42,7 +42,7 @@ Prior mockups produced during design exploration (for historical reference
 
 | Artifact | What it explored |
 |---|---|
-| `app/App.jsx` | Full working prototype: survey flow, live scoring, storage-backed persistence, role-gated login |
+| `prototype/App.jsx` | Full working prototype: survey flow, live scoring, storage-backed persistence, role-gated login. Superseded by `src/` for anything already ported (currently just Transformation Goals) — still the reference for what isn't. |
 | `design/archive/design-directions.html` | Three early visual directions (Instrument Panel, Field Notebook, Diffusion Spectrum) |
 | `design/archive/hud-direction.html`, `layout-options.html`, `typography-options.html` | JARVIS/HUD visual refinement — palette, layout skeletons, typography pairings |
 | `design/archive/jarvis-mockup-v2/v3/v4.html`, `jarvis-mockup.html` | Hero visualization evolution: 3D globe → animated Rogers curve → fully interactive per-respondent curve |

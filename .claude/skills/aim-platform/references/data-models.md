@@ -66,8 +66,11 @@ prototype only — never carry this forward into the real backend.
   roiExample?: string,
   lastUpdated, updatedBy }
 ```
-Implemented in `app/App.jsx` (build phase 2), seeded with the client's real
-19-goal ROI grid transcribed from `design/active/roi-ladder.html`.
+Real, DB-backed as of the phase-5 migration: schema in
+`supabase/migrations/0001_init.sql`, TS type in `src/lib/types.ts`, seed
+content in `src/lib/data/transformation-goals-seed.ts` (the client's real
+19-goal ROI grid, originally transcribed from `design/active/roi-ladder.html`
+into `prototype/App.jsx` during build phase 2, now the canonical copy).
 
 ### Nudge — *not yet built*
 ```
@@ -84,7 +87,13 @@ Implemented in `app/App.jsx` (build phase 2), seeded with the client's real
 
 ## Where these live today
 
-All of the above (except Nudge and Integration, which don't exist yet) are
-implemented in `app/App.jsx` using the artifact `window.storage` key-value
-API — see `references/engineering.md` for the prototype's storage model and
-the plan to migrate to Postgres via Supabase.
+Every model above has a real Postgres table + RLS policy in
+`supabase/migrations/0001_init.sql` as of the phase-5 migration (pulled
+forward — see `references/engineering.md`). Only **TransformationGoal**
+(and, implicitly, Profile/Question via auth + the seed script) has actual
+data flowing through it and a real UI. Respondent, Workflow, Intervention,
+Nudge, and Integration have schema but no UI yet — Nudge and Integration
+also have no logic wired to their tables (both still "not yet built" as
+*features*, per PRD §4, even though their tables now exist). The original
+`window.storage`-only versions of these models live only in
+`prototype/App.jsx` now, which is no longer being extended.

@@ -48,17 +48,31 @@ Interventions (training, peer pairing, etc.) are the lever that moves people
 along Readiness and workflows through the pipeline — they're not a fourth
 peer workstream.
 
-## Current state — prototype only
+## Current state — standalone Next.js + Supabase app (mid-migration)
 
-`app/App.jsx` is a **browser-only prototype**: a single-file React artifact
-using the artifact `window.storage` key-value API for persistence. There is
-no real backend, no real auth (email + plaintext passcode — demo-only, never
-production-secure), and no real vendor integrations.
+The app is now a real standalone project (`src/`, `package.json`,
+`supabase/migrations/`) — the phase-5 backend migration was pulled forward,
+at the user's explicit request, ahead of Nudges/Tier-1-forms (phases 3-4),
+once Transformation Goals (phase 2) already existed. Real auth (Supabase
+Auth: email/password + Google/Microsoft SSO) and a full Postgres schema +
+RLS exist for every PRD §4 data model — see `supabase/migrations/0001_init.sql`.
 
-Treat it as a **reference for data shapes and UI conventions**, not as code
-to deploy as-is. `design/active/` and `design/archive/` hold prior mockups
-from the design exploration phase — archive entries are superseded where they
-conflict with the PRD (see PRD §8).
+**Real and DB-backed today:** auth, the role-gated app shell, and the
+**Transformation Goals** tab (`src/app/(app)/goals/`).
+
+**Still stubs** (`src/components/NotMigrated.tsx` placeholder, honest about
+not being real yet): Dashboard, Assessment Builder, Take Assessment, Scoring
+Engine, Reports, Teams. Porting each from `prototype/App.jsx` is unstarted
+follow-up work — don't assume they're live.
+
+`prototype/App.jsx` (moved from the old `app/App.jsx` — Next.js's App Router
+needed that path) is the **original browser-only artifact prototype**:
+single-file React using the artifact `window.storage` key-value API, demo
+plaintext-passcode auth. It is no longer live, but treat it as a **reference
+for data shapes and UI conventions** for the tabs not yet ported — it's not
+deployable and not being extended further. `design/active/` and
+`design/archive/` hold prior mockups; archive entries are superseded where
+they conflict with the PRD (see PRD §8).
 
 ## Design system
 
@@ -85,8 +99,9 @@ token storage + a scheduled sync worker per connector. OAuth config happens
 once per vendor, not custom-built per feature; the Integrations tab is just a
 list view with Connect/Disconnect buttons over this registry.
 
-**Full build sequence is PRD §6.3.** Check what phase the project is
-actually on before skipping ahead — e.g. Transformation Goals need to become
-a real data model (still in `window.storage`) and Nudges need to be built
-*before* the migration off `window.storage` to the real backend, which in
-turn comes *before* the Integrations registry and vendor connectors.
+**Full build sequence is PRD §6.3** — but note it's currently being executed
+**out of the original order**: the backend/auth migration (originally phase
+5) was pulled forward ahead of Nudges and Tier-1 forms (phases 3-4) at the
+user's request. Check `README.md`'s "Next steps" section for the current
+actual state before assuming a phase is or isn't done — don't rely on PRD
+§6.3's checkbox order alone, since it no longer matches execution order.

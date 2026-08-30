@@ -1,6 +1,6 @@
 ---
 name: aim-platform
-description: Project conventions and source-of-truth reference for the AIM Platform (AI workforce-transformation measurement tool built around the client's First Person Framework). Use this whenever working in this repo — adding or changing a data model, building or restyling UI, discussing Readiness/Rogers scoring, Workflows lifecycle, Transformation Goals or the ROI Measurability Ladder, touching app/App.jsx, planning the backend migration or an Integrations connector, or writing/updating docs/PRD-Engineering-Framework.md itself. Consult it even for small changes (a new field, a new tab, a new color) — this project has specific, already-decided conventions that should not be re-improvised from scratch.
+description: Project conventions and source-of-truth reference for the AIM Platform (AI workforce-transformation measurement tool built around the client's First Person Framework), now a standalone Next.js + Supabase app. Use this whenever working in this repo — adding or changing a data model, building or restyling UI, discussing Readiness/Rogers scoring, Workflows lifecycle, Transformation Goals or the ROI Measurability Ladder, touching src/ or prototype/App.jsx, planning Supabase/auth work or an Integrations connector, or writing/updating docs/PRD-Engineering-Framework.md itself. Consult it even for small changes (a new field, a new tab, a new color) — this project has specific, already-decided conventions that should not be re-improvised from scratch.
 ---
 
 # AIM Platform
@@ -33,7 +33,7 @@ Don't read all of these up front — jump to the one that matches the task.
 | Navigation tabs, role-based access (`superadmin`/`hradmin`/`manager`/`viewer`) | `references/navigation-and-roles.md` |
 | Any data shape — User, Question, Respondent, Workflow, Intervention, TransformationGoal, Nudge, Integration | `references/data-models.md` |
 | New UI, colors, typography, component patterns | `references/design-system.md` |
-| `app/App.jsx`, the prototype's limitations, the production stack (Vercel + Supabase), the Integrations Registry pattern, or **what build phase we're actually on** | `references/engineering.md` |
+| `prototype/App.jsx`, the standalone Next.js + Supabase app's structure, the Integrations Registry pattern, or **what build phase we're actually on** | `references/engineering.md` |
 | A design question that feels unresolved, or citing prior mockups in `design/` | `references/open-decisions-and-artifacts.md` |
 
 ## Rules that apply regardless of which file you read
@@ -44,20 +44,22 @@ Don't read all of these up front — jump to the one that matches the task.
    explicitly *not yet resolved* — see `references/open-decisions-and-artifacts.md`.
    Don't silently pick an answer and build against it.
 
-2. **Don't skip build phases.** `references/engineering.md` lists the build
-   sequence in order (PRD §6.3). Before starting work on Nudges,
-   Integrations, or the backend migration, confirm the prior phases are
-   actually done — the sequence exists because each phase's data already
-   flows through the app by the time the next one needs it, and building
-   out of order re-creates infrastructure that a later, cheaper phase would
-   have given you for free.
+2. **Check what's actually been built before assuming a phase is done.**
+   `references/engineering.md` lists PRD §6.3's build sequence, but the
+   backend/auth migration (originally phase 5) was pulled forward ahead of
+   Nudges and Tier-1 forms (phases 3-4) at the user's request — the
+   sequence's *order* no longer matches execution order. `README.md`'s "Next
+   steps" section is the current source of truth for what's real vs. stub;
+   don't assume a numerically-earlier phase is done just because a
+   numerically-later one is.
 
-3. **`app/App.jsx` is a reference, not a target.** It shows correct data
-   shapes and UI conventions but runs on the artifact `window.storage` API
-   and demo-only auth. Never treat it as code to deploy as-is, and don't
-   "fix" its prototype limitations in place — they're tracked, intentional,
-   and resolved by the migration step in `references/engineering.md`, not by
-   ad hoc patches.
+3. **`prototype/App.jsx` is a reference for not-yet-ported tabs, not a
+   target.** It's the original artifact-only prototype (moved from
+   `app/App.jsx` — Next.js's App Router needed that path). It shows correct
+   data shapes and UI conventions for Dashboard/Assessment Builder/Take
+   Assessment/Scoring Engine/Reports/Teams, none of which are ported yet.
+   Never treat it as code to deploy as-is, and don't extend it further — new
+   work goes in `src/` against the real Supabase backend.
 
 4. **Every Transformation Goal is the three-part statement, no exceptions.**
    *"The business will [ACTION] by people who [RESOURCES/behavior] to
