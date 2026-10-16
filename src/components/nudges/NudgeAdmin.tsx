@@ -13,16 +13,20 @@ export interface NudgeRow {
   targetRole: string | null;
   responseCount: number;
   recentResponses: { value: string; respondedAt: string }[];
+  lastDispatchedAt: string | null;
+  delivery: { sent: number; failed: number; responded: number; providers: string[] } | null;
 }
 
 export function NudgeAdmin({
   nudges,
   tierZeroGoals,
   onCreate,
+  onSendNow,
 }: {
   nudges: NudgeRow[];
   tierZeroGoals: { id: string; title: string }[];
   onCreate: (input: CreateNudgeInput) => Promise<void>;
+  onSendNow: (nudgeId: string) => Promise<{ sent: number; failed: number }>;
 }) {
   const [showForm, setShowForm] = useState(false);
   const [questionText, setQuestionText] = useState("");
@@ -122,28 +126,62 @@ export function NudgeAdmin({
       ) : (
         <div className="flex flex-col gap-px bg-hud-line">
           {nudges.map((n) => (
-            <div key={n.id} className="bg-hud-panel p-5">
-              <div className="flex justify-between items-start gap-4 mb-2">
-                <p className="text-[14px] text-hud-text leading-relaxed">{n.questionText}</p>
-                <span className="shrink-0 font-mono text-[10px] text-hud-cyan border border-hud-cyan px-2 py-0.5 uppercase">
-                  {n.responseCount} response{n.responseCount === 1 ? "" : "s"}
-                </span>
-              </div>
-              <div className="flex gap-2 flex-wrap mb-3">
-                {n.linkedGoalTitle && <span className="font-mono text-[9px] text-hud-amber border border-hud-amber px-2 py-0.5 uppercase">→ {n.linkedGoalTitle}</span>}
-                <span className="font-mono text-[9px] text-hud-sub border border-hud-line px-2 py-0.5 uppercase">{n.cadence}</span>
-                {n.targetDepartment && <span className="font-mono text-[9px] text-hud-sub border border-hud-line px-2 py-0.5 uppercase">dept: {n.targetDepartment}</span>}
-                {n.targetRole && <span className="font-mono text-[9px] text-hud-sub border border-hud-line px-2 py-0.5 uppercase">role: {n.targetRole}</span>}
-              </div>
-              {n.recentResponses.length > 0 && (
-                <div className="text-xs text-hud-sub">
-                  Recent: {n.recentResponses.map((r) => `"${r.value}"`).join(", ")}
-                </div>
-              )}
-            </div>
+            <NudgeCard key={n.id} nudge={n} onSendNow={onSendNow} />
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+function NudgeCard({ nudge: n, onSendNow }: { nudge: NudgeRow; onSendNow: (nudgeId: string) => Promise<{ sent: number; failed: number }> }) {
+  const [isPending, startTransition] = useTransition();
+  const [result, setResult] = useState<{ sent: number; failed: number } | null>(null);
+
+  return (
+    <div className="bg-hud-panel p-5">
+      <div className="flex justify-between items-start gap-4 mb-2">
+        <p className="text-[14px] text-hud-text leading-relaxed">{n.questionText}</p>
+        <div className="flex gap-2 shrink-0">
+          <span className="font-mono text-[10px] text-hud-cyan border border-hud-cyan px-2 py-0.5 uppercase">
+            {n.responseCount} response{n.responseCount === 1 ? "" : "s"}
+          </span>
+          <button
+            onClick={() =>
+              startTransition(async () => {
+                setResult(await onSendNow(n.id));
+              })
+            }
+            disabled={isPending}
+            className="font-mono text-[10px] text-hud-sub border border-hud-line px-2 py-0.5 uppercase cursor-pointer hover:border-hud-cyan hover:text-hud-cyan"
+          >
+            {isPending ? "Sending…" : "Send now"}
+          </button>
+        </div>
+      </div>
+      <div className="flex gap-2 flex-wrap mb-3">
+        {n.linkedGoalTitle && <span className="font-mono text-[9px] text-hud-amber border border-hud-amber px-2 py-0.5 uppercase">→ {n.linkedGoalTitle}</span>}
+        <span className="font-mono text-[9px] text-hud-sub border border-hud-line px-2 py-0.5 uppercase">{n.cadence}</span>
+        {n.targetDepartment && <span className="font-mono text-[9px] text-hud-sub border border-hud-line px-2 py-0.5 uppercase">dept: {n.targetDepartment}</span>}
+        {n.targetRole && <span className="font-mono text-[9px] text-hud-sub border border-hud-line px-2 py-0.5 uppercase">role: {n.targetRole}</span>}
+      </div>
+      <div className="text-xs text-hud-sub mb-1">
+        {n.delivery ? (
+          <>
+            Delivered via {n.delivery.providers.join(", ")}: {n.delivery.sent} sent, {n.delivery.responded} responded
+            {n.delivery.failed > 0 && <span className="text-red-400"> · {n.delivery.failed} failed</span>}
+          </>
+        ) : (
+          <span className="text-hud-muted">Not yet pushed to Slack/Teams — connect a provider on the Integrations tab.</span>
+        )}
+        {n.lastDispatchedAt && <span className="text-hud-muted"> · last sent {new Date(n.lastDispatchedAt).toLocaleString()}</span>}
+      </div>
+      {result && (
+        <div className="text-xs text-hud-cyan mb-1">
+          Just now: sent to {result.sent}, {result.failed} failed.
+        </div>
+      )}
+      {n.recentResponses.length > 0 && <div className="text-xs text-hud-sub">Recent: {n.recentResponses.map((r) => `"${r.value}"`).join(", ")}</div>}
     </div>
   );
 }

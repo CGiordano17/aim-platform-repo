@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { dispatchNudge } from "@/lib/notifications/dispatch";
 
 export interface CreateNudgeInput {
   questionText: string;
@@ -50,4 +51,25 @@ export async function submitNudgeResponse(nudgeId: string, value: string) {
   if (error) throw new Error(`Failed to submit response: ${error.message}`);
   revalidatePath("/dashboard");
   revalidatePath("/nudges");
+}
+
+// Manually fires one nudge right away, outside its cadence — useful for
+// testing a connector or sending an ad hoc prompt. dispatchNudge itself
+// uses the service-role client (it has to — it writes across profiles/
+// notification_identities/nudge_deliveries that RLS doesn't grant end
+// users access to), so this action does its own role check up front
+// rather than relying on RLS the way the rest of this file can.
+export async function dispatchNudgeNow(nudgeId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not signed in.");
+
+  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+  if (profile?.role !== "superadmin" && profile?.role !== "hradmin") throw new Error("Not authorized.");
+
+  const result = await dispatchNudge(nudgeId);
+  revalidatePath("/nudges");
+  return result;
 }

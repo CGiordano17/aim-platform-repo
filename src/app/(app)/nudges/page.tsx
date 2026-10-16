@@ -1,14 +1,15 @@
 import { createClient } from "@/lib/supabase/server";
 import { NudgeAdmin, type NudgeRow } from "@/components/nudges/NudgeAdmin";
-import { createNudge } from "./actions";
+import { createNudge, dispatchNudgeNow } from "./actions";
 
 export default async function NudgesPage() {
   const supabase = await createClient();
 
-  const [{ data: nudgeRows, error }, { data: goalRows }, { data: responseRows }] = await Promise.all([
+  const [{ data: nudgeRows, error }, { data: goalRows }, { data: responseRows }, { data: deliveryRows }] = await Promise.all([
     supabase.from("nudges").select("*, transformation_goals(title)").order("created_at", { ascending: false }),
     supabase.from("transformation_goals").select("id, title").eq("tier", 0).order("title"),
     supabase.from("nudge_responses").select("nudge_id, value, responded_at").order("responded_at", { ascending: false }),
+    supabase.from("nudge_deliveries").select("nudge_id, provider, status"),
   ]);
 
   if (error) {
@@ -22,8 +23,22 @@ export default async function NudgesPage() {
     responsesByNudge.set(r.nudge_id, list);
   });
 
+  // Delivery stats (Slack/Teams push) are separate from nudge_responses
+  // above (which also includes replies via the Dashboard widget) — this is
+  // specifically "did the organic-delivery path actually reach people."
+  const deliveryStatsByNudge = new Map<string, { sent: number; failed: number; responded: number; providers: Set<string> }>();
+  (deliveryRows ?? []).forEach((d) => {
+    const stats = deliveryStatsByNudge.get(d.nudge_id) ?? { sent: 0, failed: 0, responded: 0, providers: new Set<string>() };
+    if (d.status === "failed") stats.failed++;
+    else stats.sent++;
+    if (d.status === "responded") stats.responded++;
+    stats.providers.add(d.provider);
+    deliveryStatsByNudge.set(d.nudge_id, stats);
+  });
+
   const nudges: NudgeRow[] = (nudgeRows ?? []).map((row) => {
     const responses = responsesByNudge.get(row.id) ?? [];
+    const delivery = deliveryStatsByNudge.get(row.id);
     return {
       id: row.id,
       questionText: row.question_text,
@@ -34,8 +49,12 @@ export default async function NudgesPage() {
       targetRole: row.target_role,
       responseCount: responses.length,
       recentResponses: responses.slice(0, 5),
+      lastDispatchedAt: row.last_dispatched_at,
+      delivery: delivery
+        ? { sent: delivery.sent, failed: delivery.failed, responded: delivery.responded, providers: Array.from(delivery.providers) }
+        : null,
     };
   });
 
-  return <NudgeAdmin nudges={nudges} tierZeroGoals={goalRows ?? []} onCreate={createNudge} />;
+  return <NudgeAdmin nudges={nudges} tierZeroGoals={goalRows ?? []} onCreate={createNudge} onSendNow={dispatchNudgeNow} />;
 }
