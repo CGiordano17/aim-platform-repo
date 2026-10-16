@@ -37,6 +37,16 @@ export interface NotificationProvider {
   readonly key: NotificationProviderKey;
 
   /**
+   * Verifies this provider's configured credentials (env vars) actually
+   * work, without sending anything to anyone. Backs the Integrations tab's
+   * "Connect" button — these providers authenticate via a bot token/app
+   * credential set once by an admin, not a per-click OAuth consent screen,
+   * so "connecting" means confirming the credentials are valid and
+   * recording that, not a redirect flow.
+   */
+  testConnection(): Promise<boolean>;
+
+  /**
    * Resolve a corporate email to this provider's internal user id. This is
    * what replaces a user-facing "connect your account" step — it runs once,
    * server-side, the first time a nudge needs to reach that person, and the

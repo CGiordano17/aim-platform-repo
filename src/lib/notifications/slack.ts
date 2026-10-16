@@ -28,6 +28,15 @@ async function slackCall<T>(method: string, body: Record<string, unknown>): Prom
 export const slackProvider: NotificationProvider = {
   key: "slack",
 
+  async testConnection(): Promise<boolean> {
+    try {
+      await slackCall("auth.test", {});
+      return true;
+    } catch {
+      return false;
+    }
+  },
+
   async resolveUserByEmail(email: string): Promise<ResolvedExternalUser | null> {
     try {
       const data = await slackCall<{ user: { id: string; team_id: string } }>("users.lookupByEmail", { email });

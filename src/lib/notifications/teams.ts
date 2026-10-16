@@ -72,6 +72,16 @@ const jwks = jwksClient({ jwksUri: "https://login.botframework.com/v1/.well-know
 export const teamsProvider: NotificationProvider = {
   key: "microsoft_teams",
 
+  async testConnection(): Promise<boolean> {
+    try {
+      await getGraphAppToken();
+      await getBotFrameworkToken();
+      return true;
+    } catch {
+      return false;
+    }
+  },
+
   async resolveUserByEmail(email: string): Promise<ResolvedExternalUser | null> {
     try {
       const token = await getGraphAppToken();
