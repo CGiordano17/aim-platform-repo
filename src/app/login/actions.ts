@@ -37,7 +37,11 @@ export async function signUpWithPassword(formData: FormData) {
   redirect("/login?message=Check your email to confirm your account.");
 }
 
-export async function signInWithOAuth(provider: "google" | "azure") {
+// Microsoft personal/work-account OAuth, offered as a convenience sign-in —
+// deliberately no "google" option (see .env.example). This is separate from
+// enterprise SSO below: this is one specific vendor's consumer OAuth flow,
+// not a SAML/OIDC connection an enterprise IT team controls.
+export async function signInWithOAuth(provider: "azure") {
   const supabase = await createClient();
   const origin = (await headers()).get("origin");
 
@@ -49,4 +53,29 @@ export async function signInWithOAuth(provider: "google" | "azure") {
     redirect(`/login?error=${encodeURIComponent(error.message)}`);
   }
   if (data.url) redirect(data.url);
+}
+
+// Vendor-agnostic enterprise SSO: Supabase resolves the email domain to
+// whichever SAML/OIDC identity provider that enterprise registered for it
+// (Okta, Entra ID, OneLogin, PingFederate — anything) via `supabase sso add`
+// against their own tenant. We never choose or hardcode an IdP vendor here —
+// this is what makes the login path something any enterprise IT team can
+// plug their own identity stack into, which is the whole point.
+export async function signInWithEnterpriseSSO(formData: FormData) {
+  const domain = String(formData.get("domain") ?? "").trim();
+  if (!domain) {
+    redirect(`/login?error=${encodeURIComponent("Enter your company email domain.")}`);
+  }
+
+  const supabase = await createClient();
+  const origin = (await headers()).get("origin");
+
+  const { data, error } = await supabase.auth.signInWithSSO({
+    domain,
+    options: { redirectTo: `${origin}/auth/callback` },
+  });
+  if (error || !data?.url) {
+    redirect(`/login?error=${encodeURIComponent(error?.message ?? "No SSO connection is set up for that domain yet.")}`);
+  }
+  redirect(data.url);
 }
