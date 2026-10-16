@@ -54,28 +54,35 @@ The app is now a real standalone project (`src/`, `package.json`,
 `supabase/migrations/`) — the phase-5 backend migration was pulled forward,
 at the user's explicit request, ahead of Nudges/Tier-1-forms (phases 3-4),
 once Transformation Goals (phase 2) already existed. Real auth (Supabase
-Auth: email/password + Google/Microsoft SSO) and a full Postgres schema +
-RLS exist for every PRD §4 data model — see `supabase/migrations/0001_init.sql`.
+Auth: email/password + vendor-agnostic enterprise SSO, plus Microsoft OAuth
+as a convenience sign-in — **deliberately no Google**, per explicit client
+steer) and a full Postgres schema + RLS exist for every PRD §4 data model —
+see `supabase/migrations/0001_init.sql`.
 
 **Real and DB-backed today:** everything the original prototype had —
 Take Assessment, Assessment Builder, Scoring Engine, Dashboard, Reports,
 Teams, and Transformation Goals (now also with a Tier 1 manual-review log on
 top). Nudges (phase 3) is also built: admin-authored on the Nudges tab, with
-actual response collection living on the Dashboard's "Nudges for you" widget
-since PRD §3 keeps the Nudges tab itself admin-only. The **Workflows** tab
-(referenced in PRD §3's nav, mocked but never actually built — a
-pre-existing gap, not a numbered PRD phase) is also real now: a Kanban board
-where stage advancement is always a manual admin action, never automatic
-(PRD §7 leaves auto-vs-approved paving unresolved). The **Integrations
-registry framework** (phase 6) is real too — schema, a typed connector
-registry, a working admin tab — but `src/lib/integrations/registry.ts`'s
-registry is deliberately empty, since no vendor is chosen. `src/components/
-NotMigrated.tsx` is now unused — nothing points to it anymore.
+answers collectible either organically (a reply to a Slack/Teams push) or
+via the Dashboard's "Nudges for you" widget, since PRD §3 keeps the Nudges
+tab itself admin-only — the admin tab also shows real delivery stats and a
+manual "Send now" per nudge. The **Workflows** tab (referenced in PRD §3's
+nav, mocked but never actually built — a pre-existing gap, not a numbered
+PRD phase) is also real now: a Kanban board where stage advancement is
+always a manual admin action, never automatic (PRD §7 leaves
+auto-vs-approved paving unresolved). The **Integrations registry
+framework** (phase 6) is real too — schema, a typed connector registry, a
+working admin tab — and now has real connectors for notification delivery
+(Slack, Microsoft Teams, via `src/lib/notifications/`); the metrics-sync
+side of `CONNECTOR_REGISTRY` stays deliberately empty, since no Tier 2/3
+vendor is chosen. `src/components/NotMigrated.tsx` is now unused — nothing
+points to it anymore.
 
-**Not built:** an actual vendor connector for Integrations (blocked on the
-vendor decision) and **deep integrations** (Tier 3, phase 7), which depends
-on it. Also: nothing here has been deployed to a live Vercel/Supabase
-project or tested in a browser — only `npm run build`/`typecheck`/`lint`.
+**Not built:** a metrics-sync vendor connector for Integrations (blocked on
+that vendor decision — separate from notification delivery, which is done)
+and **deep integrations** (Tier 3, phase 7), which depends on it. Also:
+nothing here has been deployed to a live Vercel/Supabase project or tested
+in a browser — only `npm run build`/`typecheck`/`lint`.
 
 `prototype/App.jsx` (moved from the old `app/App.jsx` — Next.js's App Router
 needed that path) is the **original browser-only artifact prototype**:
@@ -108,7 +115,18 @@ Vendor connectors follow an **Integrations Registry** pattern — a
 `connectors` table (vendor, auth config, field mappings) + encrypted OAuth
 token storage + a scheduled sync worker per connector. OAuth config happens
 once per vendor, not custom-built per feature; the Integrations tab is just a
-list view with Connect/Disconnect buttons over this registry.
+list view with Connect/Disconnect buttons over this registry. The registry
+now has two distinct `purpose`s — `notification` (Slack, Microsoft Teams —
+real) and `metrics_sync` (Tier 2/3 goal data — still unchosen) — don't
+conflate the two.
+
+**Notification delivery** (organic Nudge push, not a site visit) follows
+its own vendor-agnostic `NotificationProvider` interface in
+`src/lib/notifications/`, implemented for Slack and Microsoft Teams.
+Deliberately not Google — many enterprises explicitly avoid it. Delivery
+and inbound replies both run over outbound-only HTTPS (webhook signatures
+verified via HMAC/JWT, never an inbound connection), which is what actually
+survives enterprise firewall/egress policy.
 
 **Full build sequence is PRD §6.3** — but note it's currently being executed
 **out of the original order**: the backend/auth migration (originally phase

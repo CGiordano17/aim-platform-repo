@@ -22,8 +22,12 @@ into the PRD.
       per category, rather than fixed seed content?
 - [ ] ROI ladder card interaction: always show the full goal sentence, or
       collapse to title-only with expand-on-click/hover for density?
-- [ ] Real auth approach: email/password with hashing, or SSO
-      (Google/Microsoft)?
+- [x] Real auth approach: **resolved** — email/password (hashed) **and**
+      vendor-agnostic enterprise SSO (`signInWithSSO({ domain })`, resolving
+      to any SAML/OIDC IdP an enterprise registers — Okta, Entra ID,
+      OneLogin, etc.), plus Microsoft OAuth as a separate convenience
+      sign-in. Deliberately **no Google** — explicit client steer that many
+      enterprises avoid it.
 - [ ] Pyramid/rollup depth: fixed template (Use Case → Functional →
       Cross-Functional → Enterprise), or fully flexible levels an org
       defines themselves?

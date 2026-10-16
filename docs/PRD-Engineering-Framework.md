@@ -124,13 +124,13 @@ Top-level tabs (peers, not nested):
 | Workflows | Kanban: Identified → Augmented → Piloting → Standard | All roles (edit: TBD by role) |
 | Interventions | Plan training moments, casual collisions, sustainment sessions, role-based trainings | superadmin, hradmin |
 | Transformation Goals | ROI Measurability Ladder, goal authoring, objective picker | All roles (edit: TBD by role) |
-| Nudges | **Not yet built.** Individual-level self-report micro-surveys tied to Goals/Workflows | superadmin, hradmin |
-| Integrations | **Not yet built.** Connector registry — OAuth connect buttons per vendor | superadmin only |
+| Nudges | Individual-level self-report micro-surveys tied to Goals/Workflows, pushed organically to Slack/Teams rather than requiring a site visit (§6.2) | superadmin, hradmin |
+| Integrations | Connector registry — OAuth/bot-credential connect buttons per vendor, for both nudge delivery and future metrics-sync vendors | superadmin only |
 | Reports | Org / department / individual drill-down | All roles |
 | Teams | User directory, role management | superadmin, hradmin |
 | Config | Thresholds, feature flags, privacy | superadmin only |
 
-**Roles:** `superadmin`, `hradmin`, `manager`, `viewer`. Current prototype auth is email + plaintext passcode in shared storage — explicitly flagged as demo-only, not production-secure. Real auth (hashed credentials or SSO) is required before any real user data touches this system.
+**Roles:** `superadmin`, `hradmin`, `manager`, `viewer`. Real auth is Supabase Auth: email/password (hashed) plus vendor-agnostic enterprise SSO (any SAML/OIDC identity provider an enterprise's IT team already runs — Okta, Entra ID, OneLogin, etc.) and Microsoft OAuth as a separate convenience sign-in. No Google option, by explicit client steer — see §7.
 
 ---
 
@@ -201,18 +201,45 @@ card to show "Tier + GA maturity tags," but this schema had omitted the field. `
 `sourceDetail` were also added to carry over context from the client's real ROI grid content
 now seeded in `app/App.jsx`.)*
 
-### Nudge — *not yet built*
+### Nudge
 ```
 { id, questionText, linkedGoalId, cadence: 'per-completion'|'weekly'|'monthly',
   targetAudience: { department?, role?, individualIds? },
+  lastDispatchedAt?,
   responses: [{ respondentId, value, timestamp }] }
 ```
+Delivery is a separate concern from the nudge definition itself — see
+`NotificationIdentity` and `NudgeDelivery` below. A nudge can be answered
+either organically (a reply to the Slack/Teams message) or via the
+Dashboard's "Nudges for you" widget; both write to the same `responses` list.
 
-### Integration — *not yet built*
+### Integration
 ```
-{ id, vendorName, authType: 'oauth', status: 'connected'|'disconnected',
-  scopes: string[], connectedAt?, lastSync?, syncedMetrics: string[] }
+{ id, vendorName, purpose: 'notification'|'metrics_sync', authType: 'oauth'|'bot_token',
+  status: 'connected'|'disconnected', scopes: string[], connectedAt?, lastSync?,
+  syncedMetrics: string[], config, accessToken?, refreshToken?, tokenExpiresAt? }
 ```
+`purpose` distinguishes two unrelated uses of the same registry pattern:
+nudge-delivery connectors (Slack, Microsoft Teams — real, chosen) and
+Transformation-Goal metrics-sync connectors (Tier 2/3 — still no vendor
+chosen). Don't conflate the two when adding a new connector.
+
+### NotificationIdentity — *added for push-style Nudge delivery*
+```
+{ id, profileId, provider: 'slack'|'microsoft_teams', externalUserId, createdAt }
+```
+Resolve-and-cache mapping from a platform user to their identity on a given
+notification vendor (e.g. their Slack member ID), looked up by email once
+and reused — there's no separate "connect your account" step for end users.
+
+### NudgeDelivery — *added for push-style Nudge delivery*
+```
+{ id, nudgeId, profileId, provider: 'slack'|'microsoft_teams',
+  status: 'sent'|'failed'|'responded', dispatchedAt, respondedAt? }
+```
+One row per individual push attempt — this is what the Nudges admin tab's
+delivery stats (sent/failed/responded, which providers) are computed from,
+distinct from the self-report `responses` list on the Nudge itself.
 
 ---
 
@@ -256,7 +283,9 @@ Category color (shown on column headers) and tier color (shown on card left-bord
 ### 6.2 Target production architecture
 - **Hosting:** Vercel (frontend) — chosen for the easy/free path.
 - **Backend + DB:** Supabase (Postgres + built-in Auth) — replaces plaintext passcode auth with real hashed/SSO auth in the same move.
-- **Integrations registry:** a `connectors` table (vendor, auth config, field mappings) + OAuth token storage (encrypted) + a scheduled sync worker per connector. The admin-facing "Integrations" tab is just a list view over this registry with Connect/Disconnect buttons — all connector logic is pre-built, never written ad hoc per Goal.
+- **Auth:** email/password (hashed) plus vendor-agnostic enterprise SSO (`signInWithSSO({ domain })` — any SAML/OIDC IdP the enterprise registers) and Microsoft OAuth as a convenience option. No Google, by explicit client steer (§7).
+- **Notification delivery (organic Nudge push):** a vendor-agnostic `NotificationProvider` interface, implemented for Slack and Microsoft Teams — chosen specifically because the client flagged that many enterprises avoid Google. Delivery runs entirely over outbound-only HTTPS (webhook replies included, verified via HMAC/JWT rather than an inbound connection), which is what survives enterprise firewall/egress policy without requiring VPN peering or an installed agent. See §6.3 step 8.
+- **Integrations registry:** a `connectors` table (vendor, auth config, field mappings) + OAuth token storage (encrypted) + a scheduled sync worker per connector. The admin-facing "Integrations" tab is just a list view over this registry with Connect/Disconnect buttons — all connector logic is pre-built, never written ad hoc per Goal. Populated for notification-purpose connectors (Slack, Teams); still empty for metrics-sync connectors (Tier 2/3) since that vendor isn't chosen.
 - **Scoring engine:** the text-answer LLM scoring call (Claude) must move server-side in production (currently client-side in the prototype) to protect API keys and add retry/rate-limit handling.
 
 ### 6.3 Build sequence
@@ -278,6 +307,11 @@ current source of truth for what's actually done.
 
    Also closed during this pass: the **Workflows** tab, referenced in this section 3's nav table and mocked in `design/active/workflows-interventions.html`, but never actually built in any phase above or in the original prototype. Real Kanban board (Identified → Augmented → Piloting → Standard) over the already-existing `workflows` schema; stage advancement is always a manual admin action, and `adoptionThreshold` stays per-workflow-editable — neither of §7's two open Workflows questions (auto-vs-approved paving, fixed-vs-configurable threshold) got silently resolved by the implementation.
 7. Build deep system integrations (Tier 3) — token telemetry, compliance logging, cross-system models — last, since it's the highest cost and benefits from patterns proven in step 6. Also still open: a real Vercel + Supabase project needs to actually be stood up and the app browser-tested — everything above has only been verified with `npm run build`/`typecheck`/`lint`.
+8. ✅ **(Added, 2026-10-16) Build organic push-style Nudge delivery (Slack + Microsoft Teams), and replace the Google SSO option with vendor-agnostic enterprise SSO.** Driven directly by the client's explicit production-UX requirement: people should answer Nudges as they come up during the day, not by visiting a site, and leaders need a portal view of whether delivery actually reached people, not just whether someone eventually answered. Two separate things landed together because they share one root cause — enterprise firewalls and IT policy:
+   - **Notification delivery**: a vendor-agnostic `NotificationProvider` interface (`src/lib/notifications/provider.ts`) with real implementations for Slack (`chat.postMessage`, HMAC-signed webhook for replies) and Microsoft Teams (Bot Framework proactive messaging, JWT-verified webhook). Both work over normal outbound-only HTTPS, which is what survives enterprise egress policy — no inbound port, no VPN peering, no agent installed on anyone's machine. `dispatchNudge`/`dispatchDueNudges` (`src/lib/notifications/dispatch.ts`) resolve each targeted person's identity on whichever provider is connected (cached in the new `NotificationIdentity` table), send, and log the attempt (`NudgeDelivery`). A Vercel Cron job (`vercel.json`) fires `dispatchDueNudges` daily (the Hobby-plan cron granularity floor); the Nudges admin tab also gets a manual "Send now" per-nudge action for testing a connector or sending ad hoc. New migration: `0004_notification_delivery.sql`.
+   - **Vendor choice, explicit**: the client flagged that many enterprises explicitly avoid Google, and asked for either a vendor-agnostic setup or a different vendor. Slack and Microsoft Teams were chosen as the two delivery vendors (both already enterprise-standard chat platforms, neither is Google); the `NotificationProvider` interface itself is vendor-agnostic so a third provider (e.g. an email fallback) can be added without touching the dispatch engine.
+   - **Enterprise SSO, made vendor-agnostic rather than vendor-picked**: the login page's Google OAuth button is removed entirely (not replaced with another single hardcoded vendor). In its place, a domain-based "company SSO" form calls Supabase's `signInWithSSO({ domain })`, which resolves to whatever SAML/OIDC identity provider each enterprise customer has registered for their own email domain (Okta, Entra ID, OneLogin, PingFederate — anything their IT team already runs) — this codebase never chooses the IdP vendor. Microsoft OAuth remains as a separate, optional convenience sign-in, not the enterprise path. This resolves §7's auth-approach question more specifically than it was originally posed.
+   - **Integrations registry**, populated for the first time: `CONNECTOR_REGISTRY` now has real entries for Slack and Microsoft Teams (`purpose: "notification"`), with a `testConnection()` contract so "Connect" actually verifies the credential instead of only starting an OAuth redirect. The Tier 2/3 metrics-sync side of the registry (`purpose: "metrics_sync"`) is still empty — that vendor choice remains open and separate from this one. New migration: `0005_integrations_vendor_unique.sql` (unique constraint needed for the registry's upsert-on-connect).
 
 ### 6.4 Process going forward
 - This document is the reference for any new feature discussion — check it before proposing new data shapes or visual patterns.
@@ -296,7 +330,7 @@ Flagged during design but not yet resolved — resolve before building the affec
 - [ ] Should Workflows be *required* to link to a Transformation Goal, or is tagging optional?
 - [ ] Should the 3 illustrative Tier-0 Nudge entries (productivity/quality/revenue) become real, admin-authored questions per category, rather than fixed seed content?
 - [ ] ROI ladder card interaction: always show the full goal sentence, or collapse to title-only with expand-on-click/hover for density?
-- [ ] Real auth approach: email/password with hashing, or SSO (Google/Microsoft)?
+- [x] Real auth approach: **resolved 2026-10-16** — email/password (hashed via Supabase Auth) **and** vendor-agnostic enterprise SSO (`signInWithSSO({ domain })`, resolving to whatever SAML/OIDC IdP each enterprise registers — Okta, Entra ID, OneLogin, etc.), plus Microsoft OAuth as a separate convenience sign-in. Deliberately **no Google** option — explicit client steer that many enterprises avoid it; see §6.3 step 8.
 - [ ] Pyramid/rollup depth: fixed template (Use Case → Functional → Cross-Functional → Enterprise), or fully flexible levels an org defines themselves?
 - [ ] Role-based edit permissions for Workflows and Transformation Goals tabs (currently only view-access is role-gated in the nav; edit rights within those tabs are undefined).
 

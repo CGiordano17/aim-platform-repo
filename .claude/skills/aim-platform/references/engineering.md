@@ -31,25 +31,59 @@ tab the original prototype had is ported and DB-backed:
   `token_expires_at`, matching PRD §6.2's fuller description. Token columns
   are explicitly plaintext-placeholder (see the migration's column
   comments) — no real vendor OAuth flow exists to populate them yet.
-- `src/lib/integrations/registry.ts` — the Integrations Registry pattern
-  itself: a typed, currently-**empty** `CONNECTOR_REGISTRY`. Adding a real
-  vendor connector is a code change here (plus wiring its "Connect" button's
-  OAuth-start route), not a runtime setting.
-- Real auth: Supabase Auth, email/password (hashed) **and** Google/Microsoft
-  SSO — resolves the PRD §7 open question. New signups default to `viewer`
-  role via a Postgres trigger; a superadmin/hradmin promotes from Teams.
+- `supabase/migrations/0004_notification_delivery.sql` — `notification_identities`
+  (cached profile → external-user-id mapping per provider) and
+  `nudge_deliveries` (one row per individual push attempt: sent/failed/
+  responded) + `nudges.last_dispatched_at`. RLS is SELECT-only for
+  superadmin/hradmin — all writes go through the service-role client in
+  `dispatch.ts`, never direct end-user access.
+- `supabase/migrations/0005_integrations_vendor_unique.sql` — unique
+  constraint on `integrations.vendor_name`, needed for the Integrations
+  "Connect" action's `upsert(..., { onConflict: "vendor_name" })`.
+- `src/lib/integrations/registry.ts` — the Integrations Registry pattern:
+  `ConnectorDefinition` now carries `purpose: "notification" | "metrics_sync"`
+  and `authType: "oauth" | "bot_token"`. `CONNECTOR_REGISTRY` is **populated**
+  for notification-purpose connectors (`slack`, `microsoft_teams`) — still
+  **empty** for metrics-sync connectors (Tier 2/3), since that vendor
+  remains unchosen. Don't conflate the two purposes when adding a connector.
+- `src/lib/notifications/` — the notification-delivery subsystem (added to
+  support organic push-style Nudges, see below): `provider.ts` (the
+  vendor-agnostic `NotificationProvider` interface), `slack.ts` and
+  `teams.ts` (real implementations), `registry.ts` (`NOTIFICATION_PROVIDERS`
+  map), `dispatch.ts` (`dispatchNudge`/`dispatchDueNudges`/
+  `recordIncomingResponse` — identity resolution, send, and delivery
+  logging, all via the service-role client since it crosses tables RLS
+  doesn't grant end users).
+- `src/app/api/cron/dispatch-nudges/route.ts` — Vercel Cron target (see
+  `vercel.json`), guarded by `CRON_SECRET`.
+- `src/app/api/webhooks/slack/route.ts`, `src/app/api/webhooks/teams/route.ts`
+  — inbound reply handlers (Slack HMAC signature verification, Teams Bot
+  Framework JWT verification against JWKS — the Teams verification is
+  hand-rolled and explicitly flagged in-code as not the officially
+  recommended path vs. the `botbuilder` SDK).
+- Real auth: Supabase Auth, email/password (hashed) **and** vendor-agnostic
+  enterprise SSO (`signInWithSSO({ domain })`, resolving to whatever SAML/
+  OIDC IdP — Okta, Entra ID, OneLogin, etc. — each enterprise registers for
+  their own domain), plus Microsoft OAuth as a separate convenience sign-in.
+  **Deliberately no Google** — explicit client steer that many enterprises
+  avoid it; this resolves the PRD §7 open question. New signups default to
+  `viewer` role via a Postgres trigger; a superadmin/hradmin promotes from
+  Teams.
 
 **Real and DB-backed:** everything — auth, the role-gated shell, Take
 Assessment (`src/app/(app)/survey/`), Assessment Builder (`assessments/`),
 Scoring Engine (`scoring-engine/`), Dashboard (`dashboard/`), Reports
 (`reports/`), Teams (`teams/`), Transformation Goals (`goals/`, plus its
-Tier 1 review log), Nudges (`nudges/`), Workflows (`workflows/`), and the
-Integrations tab (`integrations/` — framework only, see below).
+Tier 1 review log), Nudges (`nudges/` — now including Slack/Teams push
+delivery and delivery-stats visibility), Workflows (`workflows/`), and the
+Integrations tab (`integrations/` — real notification connectors; still
+framework-only for metrics-sync, see below).
 `src/components/NotMigrated.tsx` is now unused.
 
-**Not built:** any actual **vendor connector** for Integrations — the
-registry framework is real and functional, but `CONNECTOR_REGISTRY` is
-empty because no vendor has been chosen (PRD §6.2/§7). **Deep system
+**Not built:** a **metrics-sync vendor connector** for Integrations (Tier
+2/3 Transformation Goals) — the registry framework is real and functional
+for that purpose too, but no vendor has been chosen (PRD §6.2/§7); this is
+separate from notification delivery, which is done. **Deep system
 integrations** (Tier 3, phase 7) come after that. Nothing here has been
 deployed to a live Vercel/Supabase project or browser-tested — see §6.2.
 
@@ -69,13 +103,21 @@ only as design history; don't extend it.
 - **Backend + DB:** Supabase (Postgres + Auth) — schema and auth are real
   now (see above), but only against whatever Supabase project the `.env`
   points at; nothing is provisioned by this codebase itself.
-- **Integrations registry:** ✅ framework done — `public.integrations` (vendor,
-  auth config, field mappings, OAuth token columns) + `CONNECTOR_REGISTRY`
-  + a real Integrations tab with a functional Disconnect action. The
-  "scheduled sync worker per connector" part is still notional — there's
-  nothing to schedule syncing for until a real connector exists. **No
-  vendor has been chosen**, so still don't build a specific connector
-  speculatively; that's the one piece deliberately left undone.
+- **Integrations registry:** ✅ framework done, ✅ real connectors for
+  notification purpose (Slack, Microsoft Teams — `testConnection()` actually
+  verifies the credential) — `public.integrations` (vendor, auth config,
+  field mappings, OAuth token columns) + `CONNECTOR_REGISTRY` + a real
+  Integrations tab with functional Connect/Disconnect actions. **Still no
+  metrics-sync vendor chosen** (Tier 2/3 Transformation Goals) — don't build
+  a speculative connector for that purpose; it's the one piece deliberately
+  left undone. The "scheduled sync worker per connector" part for
+  metrics-sync is still notional for the same reason.
+- **Notification delivery:** ✅ done — Slack and Microsoft Teams, chosen
+  specifically because the client flagged that many enterprises avoid
+  Google. See `src/lib/notifications/` above. Runs entirely over
+  outbound-only HTTPS (webhook replies verified via HMAC/JWT rather than an
+  inbound connection), which is what survives enterprise firewall/egress
+  policy without a VPN or installed agent.
 - **Scoring engine:** ✅ done — `src/lib/anthropic.ts`'s `scoreTextAnswer`
   runs server-side, called from the `submitAssessment` Server Action in
   `src/app/(app)/survey/actions.ts`, using `ANTHROPIC_API_KEY` from `.env`.
@@ -125,11 +167,19 @@ happened, not the PRD's original numbering.
    **Still not done:** the first actual vendor connector — depends on which
    vendor the client uses, still unchosen — and deep system integrations
    (Tier 3, next).
-9. Build **deep system integrations** (Tier 3) — last, highest cost,
+9. ✅ Build **organic push-style Nudge delivery** (Slack + Microsoft Teams)
+   and replace the Google SSO option with vendor-agnostic enterprise SSO —
+   driven directly by the client's production-UX requirement (people answer
+   Nudges as they come up during the day, not by visiting a site; leaders
+   get a portal view of whether delivery actually reached people) plus an
+   explicit "avoid Google" steer. See `references/data-models.md` for the
+   new `NotificationIdentity`/`NudgeDelivery` tables and PRD §6.3 step 8 for
+   the full rationale.
+10. Build **deep system integrations** (Tier 3) — last, highest cost,
    benefits from patterns proven in step 8. **Not started.**
-10. Stand up a real Vercel + Supabase project and browser-test the app —
+11. Stand up a real Vercel + Supabase project and browser-test the app —
     nothing here has run outside `npm run build`/`typecheck`/`lint` so far.
-    This is arguably more urgent than steps 8-9 for anyone about to demo
+    This is arguably more urgent than steps 9-10 for anyone about to demo
     this to the client.
 
 ## 6.4 Process going forward
