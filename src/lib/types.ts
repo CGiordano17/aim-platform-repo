@@ -157,6 +157,7 @@ export interface Nudge {
   targetDepartment?: string | null;
   targetRole?: string | null;
   targetIndividualIds: string[];
+  lastDispatchedAt?: string | null;
 }
 
 export interface NudgeResponse {
@@ -176,4 +177,33 @@ export interface Integration {
   connectedAt?: string | null;
   lastSync?: string | null;
   syncedMetrics: string[];
+}
+
+// Notification delivery (push-style Nudges — added alongside build of the
+// organic-delivery feature). "slack" / "microsoft_teams" are deliberately
+// the two supported providers — not Google — see
+// src/lib/notifications/provider.ts for the vendor-agnostic contract any
+// future channel implements.
+export type NotificationProviderKey = "slack" | "microsoft_teams";
+
+export interface NotificationIdentity {
+  id: string;
+  profileId: string;
+  provider: NotificationProviderKey;
+  externalUserId: string;
+  externalTeamId?: string | null;
+  resolvedAt: string;
+}
+
+export interface NudgeDelivery {
+  id: string;
+  nudgeId: string;
+  profileId: string | null;
+  provider: NotificationProviderKey;
+  externalMessageId?: string | null;
+  status: "sent" | "failed" | "responded";
+  error?: string | null;
+  sentAt: string;
+  respondedAt?: string | null;
+  responseValue?: string | null;
 }
