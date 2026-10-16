@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { mapRespondentRow } from "@/lib/respondents";
 import { avg, SEGMENT_META, PATHWAY_META, type Segment, type Pathway } from "@/lib/scoring";
-import { AdoptionCurve } from "@/components/shared/AdoptionCurve";
+import { AdoptionCurve3D } from "@/components/shared/AdoptionCurve3D";
 import { StatCard, SectionLabel, ScoreBar } from "@/components/shared/ui";
 import { NudgesForYou } from "@/components/nudges/NudgesForYou";
 import { submitNudgeResponse } from "@/app/(app)/nudges/actions";
@@ -47,8 +47,11 @@ export default async function DashboardPage() {
 
   return (
     <div className="px-10 py-9 font-body">
-      <div className="mb-8">
-        <h1 className="text-[28px] font-light text-hud-text mb-1 tracking-tight">AIM Readiness Overview</h1>
+      <div className="mb-8 max-w-2xl">
+        <div className="font-mono text-[10px] text-hud-muted tracking-[0.2em] uppercase mb-2">Overview</div>
+        <h1 className="font-display text-[clamp(26px,3vw,38px)] font-normal text-hud-text mb-2 leading-tight tracking-tight">
+          AIM Readiness
+        </h1>
         <p className="text-sm text-hud-sub">AI Measurement framework — pre and post assessment tracking</p>
       </div>
 
@@ -60,8 +63,8 @@ export default async function DashboardPage() {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-4 gap-px mb-px bg-hud-line">
-            <StatCard label="Total Respondents" value={String(respondents.length)} sub="completed pre-assessment" />
+          <div className="grid gap-px mb-px bg-hud-line" style={{ gridTemplateColumns: "1.5fr 1fr 1fr 1fr" }}>
+            <StatCard label="Total Respondents" value={String(respondents.length)} sub="completed pre-assessment" featured />
             <StatCard
               label="Post Complete"
               value={String(completed)}
@@ -78,7 +81,7 @@ export default async function DashboardPage() {
           <div className="grid grid-cols-[3fr_2fr] gap-px bg-hud-line mb-px">
             <div className="bg-hud-panel p-7">
               <SectionLabel>Technology Adoption Curve — Full Organization</SectionLabel>
-              <AdoptionCurve respondents={respondents} showPost height={220} />
+              <AdoptionCurve3D respondents={respondents} showPost height={220} />
             </div>
             <div className="bg-hud-panel p-7">
               <SectionLabel>Segment Distribution</SectionLabel>

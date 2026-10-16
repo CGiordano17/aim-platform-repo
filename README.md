@@ -20,6 +20,7 @@ This is a **standalone Next.js + Supabase application** — no more browser-only
 - **Notification delivery** — a vendor-agnostic `NotificationProvider` interface with real Slack and Microsoft Teams implementations (`src/lib/notifications/`), a Vercel Cron job dispatching due nudges daily, and HMAC/JWT-verified webhooks for inbound replies. Chosen over Google specifically because many enterprises avoid it; runs entirely over outbound-only HTTPS, which is what survives enterprise firewall/egress policy.
 - **Workflows** — the "dirt path → pave it" Kanban (Identified → Augmented → Piloting → Standard); referenced in PRD §3's nav and mocked in `design/`, but never actually implemented until now
 - **Integrations** — the registry framework (connectors table, OAuth/bot-token columns, a typed connector-definition pattern, real Connect/Disconnect UI) — **real connectors for notification delivery** (Slack, Microsoft Teams), but still **no metrics-sync vendor connector** for Tier 2/3 Transformation Goals, since that vendor hasn't been chosen yet
+- **Three.js/WebGL UI** — the Dashboard adoption curve, the ROI Measurability Ladder, and the Workflows pipeline each have a real interactive 3D view (toggleable to a 2D/list fallback), plus a subtle ambient backdrop behind the whole app shell and the login page. Every data-bearing scene degrades to a real working 2D/CSS equivalent — not a blank panel — when WebGL is unavailable (locked-down enterprise devices routinely disable it) or `prefers-reduced-motion` is set. See `.claude/skills/aim-platform/references/design-system.md`'s "Three.js / WebGL layer" section.
 
 **Not built yet:** a metrics-sync vendor connector for Integrations (blocked on that vendor decision) and deep system integrations (Tier 3, phase 7), which depends on it.
 
@@ -35,6 +36,7 @@ src/
       goals/, survey/, assessments/, teams/, nudges/, workflows/, integrations/  — pages + server actions
       dashboard/, reports/, scoring-engine/, config/
   components/                   — one folder per feature area, plus shared/ (AdoptionCurve, StatCard, etc.)
+                                   and three/ (shared WebGL infra: Scene wrapper, WebGL/reduced-motion hooks)
   lib/
     supabase/                   — browser/server/middleware Supabase clients
     data/                       — real seed content (goals, questions), typed
@@ -111,6 +113,7 @@ Also available: `npm run build`, `npm run typecheck`, `npm run lint`.
 5. ✅ Workflows tab — referenced in PRD §3's nav but never implemented (not one of the numbered PRD phases, a separate gap).
 6. ✅ Integrations registry framework (phase 6) — no vendor connector, since none is chosen.
 7. ✅ Organic push-style Nudge delivery (Slack + Microsoft Teams) and vendor-agnostic enterprise SSO, replacing the Google option — driven by the client's production-UX requirement and an explicit "avoid Google" steer (PRD §6.3 step 8).
-8. **Stand up a real Vercel + Supabase project and browser-test the whole thing** — nothing here has run outside `npm run build`/`typecheck`/`lint` yet. Arguably more urgent than 9-10 before anyone demos this.
-9. Pick a vendor and build the first real metrics-sync Integrations connector (phase 6, remaining piece — separate from the notification connectors, which are done).
-10. Build deep system integrations (Tier 3, phase 7).
+8. ✅ Three.js/WebGL UI pass (Dashboard curve, ROI Ladder, Workflows pipeline, ambient backdrop) plus an app-wide editorial/asymmetry pass — driven by an explicit "make the UI innovative, use three.js" request.
+9. **Stand up a real Vercel + Supabase project and browser-test the whole thing** — nothing here has run outside `npm run build`/`typecheck`/`lint` yet. Arguably more urgent than 10-11 before anyone demos this.
+10. Pick a vendor and build the first real metrics-sync Integrations connector (phase 6, remaining piece — separate from the notification connectors, which are done).
+11. Build deep system integrations (Tier 3, phase 7).

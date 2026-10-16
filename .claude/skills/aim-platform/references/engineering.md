@@ -175,11 +175,21 @@ happened, not the PRD's original numbering.
    explicit "avoid Google" steer. See `references/data-models.md` for the
    new `NotificationIdentity`/`NudgeDelivery` tables and PRD §6.3 step 8 for
    the full rationale.
-10. Build **deep system integrations** (Tier 3) — last, highest cost,
+10. ✅ **(Added, 2026-10-16) Three.js/WebGL UI pass** — four real
+    visualizations (Dashboard adoption curve, ROI Ladder, Workflows
+    pipeline, ambient app-shell backdrop) plus an app-wide editorial pass
+    (asymmetric layouts, deliberate transitions). Driven by an explicit
+    "make the UI innovative, use three.js" request. Every data-bearing
+    scene falls back to a real 2D/CSS equivalent when WebGL is unavailable
+    or `prefers-reduced-motion` is set — see `references/design-system.md`'s
+    "Three.js / WebGL layer" section for the components, the pattern, and
+    two real bugs (an `html`/`body` CSS stacking issue, a `drei` `Html`
+    unmount issue) worth knowing before touching this layer again.
+11. Build **deep system integrations** (Tier 3) — last, highest cost,
    benefits from patterns proven in step 8. **Not started.**
-11. Stand up a real Vercel + Supabase project and browser-test the app —
+12. Stand up a real Vercel + Supabase project and browser-test the app —
     nothing here has run outside `npm run build`/`typecheck`/`lint` so far.
-    This is arguably more urgent than steps 9-10 for anyone about to demo
+    This is arguably more urgent than steps 10-11 for anyone about to demo
     this to the client.
 
 ## 6.4 Process going forward

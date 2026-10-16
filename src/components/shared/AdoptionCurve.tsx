@@ -5,7 +5,9 @@ import { SEGMENT_META, type Segment } from "@/lib/scoring";
 
 // Real curve math (not decorative), per PRD §5's signature-visualization
 // note — ported from prototype/App.jsx, restyled for the dark HUD palette.
-const curvePoints = (x: number) => {
+// Exported so AdoptionCurve3D (the WebGL version) plots the identical
+// shape rather than re-deriving it — one source of truth for the curve.
+export const curvePoints = (x: number) => {
   const segments = [
     { start: 0, end: 0.08, h: 0.35 },
     { start: 0.08, end: 0.25, h: 0.65 },
@@ -22,7 +24,7 @@ const curvePoints = (x: number) => {
   return 0;
 };
 
-const SEGMENT_ORDER: Segment[] = ["laggard", "late_majority", "early_majority", "early_adopter", "innovator"];
+export const SEGMENT_ORDER: Segment[] = ["laggard", "late_majority", "early_majority", "early_adopter", "innovator"];
 
 export function AdoptionCurve({
   respondents,

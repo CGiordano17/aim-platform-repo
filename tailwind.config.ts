@@ -29,6 +29,12 @@ const config: Config = {
         body: ["Rajdhani", "sans-serif"],
         mono: ["'JetBrains Mono'", "monospace"],
       },
+      transitionTimingFunction: {
+        // Deliberate, slightly overshooting ease — used instead of
+        // Tailwind's generic ease-in-out on anything meant to feel
+        // intentional (hover states, reveals) rather than default-browser.
+        hud: "cubic-bezier(0.16, 1, 0.3, 1)",
+      },
     },
   },
   plugins: [],

@@ -4,12 +4,29 @@
 @tailwind components;
 @tailwind utilities;
 
-html,
-body {
+/* Background lives on html, not body: in CSS's painting order, body's own
+   background paints ABOVE any z-index:-1 descendant of body (only html's
+   background sits below that layer) — needed so AppShellBackdrop's fixed,
+   z-index:-1 three.js canvas can actually show through instead of being
+   silently occluded by an opaque body background. */
+html {
   background: #07090b;
   color: #eaf6f8;
 }
 
 body {
   font-family: "Rajdhani", sans-serif;
+}
+
+/* One deliberate transition, applied once, instead of hand-adding
+   `transition-colors duration-200` to every button/link/input in the app
+   — every interactive element gets the same considered easing by default. */
+button,
+a,
+input,
+select,
+textarea {
+  transition-property: color, background-color, border-color, opacity, transform;
+  transition-duration: 180ms;
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
 }

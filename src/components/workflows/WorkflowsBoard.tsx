@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { Workflow } from "@/lib/types";
 import type { CreateWorkflowInput } from "@/app/(app)/workflows/actions";
 import { WorkflowCard, STATUS_LABEL } from "./WorkflowCard";
+import { PipelineFlow3D } from "./PipelineFlow3D";
 
 const STATUS_ORDER: Workflow["status"][] = ["identified", "augmented", "piloting", "standard"];
 const STATUS_SUB: Record<Workflow["status"], string> = {
@@ -85,6 +86,10 @@ export function WorkflowsBoard({
             {STATUS_LABEL[s].toUpperCase()} <b className="text-hud-cyan">{counts[s]}</b>
           </div>
         ))}
+      </div>
+
+      <div className="bg-hud-panel border border-hud-line mb-6">
+        <PipelineFlow3D workflows={workflows} />
       </div>
 
       {showForm && (

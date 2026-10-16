@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { NAV_ITEMS, TAB_PERMS } from "@/lib/nav";
 import type { AppRole } from "@/lib/types";
+import { AppShellBackdrop } from "@/components/three/AppShellBackdrop";
 import { signOut } from "./actions";
 
 // Protected app shell: fetches the signed-in user's profile (role +
@@ -23,7 +24,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const visibleNav = NAV_ITEMS.filter((n) => (TAB_PERMS[n.id] ?? []).includes(role));
 
   return (
-    <div className="min-h-screen bg-hud-bg2 font-body flex">
+    <div className="min-h-screen font-body flex">
+      {/* Fixed, z-index: -1, pointer-events: none — a decorative depth
+          layer behind the whole shell. bg-hud-bg2 is deliberately dropped
+          from this root so the backdrop shows through; body's own dark
+          background (globals.css) still backs everything when WebGL is
+          unavailable and AppShellBackdrop renders nothing. */}
+      <AppShellBackdrop />
       <div className="w-[220px] bg-hud-panelAlt border-r border-hud-line flex flex-col shrink-0 py-7">
         <div className="px-5 pb-6 border-b border-hud-line mb-2">
           <div className="font-mono text-[10px] text-hud-muted tracking-[0.18em] uppercase mb-1.5">AIM Platform</div>

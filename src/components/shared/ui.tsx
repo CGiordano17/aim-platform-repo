@@ -2,13 +2,27 @@
 // Assessment — ported from prototype/App.jsx's StatCard/SectionLabel/
 // ScoreBar/DistributionBar, restyled to the dark HUD palette (PRD §5).
 
-export function StatCard({ label, value, sub, delta }: { label: string; value: string; sub?: string; delta?: string }) {
+export function StatCard({
+  label,
+  value,
+  sub,
+  delta,
+  featured = false,
+}: {
+  label: string;
+  value: string;
+  sub?: string;
+  delta?: string;
+  featured?: boolean;
+}) {
   return (
-    <div className="p-5 bg-hud-panel border border-hud-line">
+    <div className={featured ? "p-6 bg-hud-panel border border-hud-line flex flex-col justify-center" : "p-5 bg-hud-panel border border-hud-line"}>
       <div className="font-mono text-[10px] text-hud-muted tracking-[0.12em] uppercase mb-2.5">{label}</div>
-      <div className="text-[32px] font-light text-hud-text leading-none tracking-tight">{value}</div>
-      {delta && <div className="text-xs text-hud-green mt-1">{delta}</div>}
-      {sub && <div className="text-[11px] text-hud-muted mt-1">{sub}</div>}
+      <div className={featured ? "font-display text-[46px] font-normal text-hud-text leading-none tracking-tight" : "text-[32px] font-light text-hud-text leading-none tracking-tight"}>
+        {value}
+      </div>
+      {delta && <div className="text-xs text-hud-green mt-1.5">{delta}</div>}
+      {sub && <div className="text-[11px] text-hud-muted mt-1.5">{sub}</div>}
     </div>
   );
 }

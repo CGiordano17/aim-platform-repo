@@ -11,6 +11,8 @@
     "db:seed": "tsx scripts/seed.ts"
   },
   "dependencies": {
+    "@react-three/drei": "^10.7.9",
+    "@react-three/fiber": "^9.8.2",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.45.4",
     "jsonwebtoken": "^9.0.2",
@@ -18,7 +20,8 @@
     "next": "16.4.2",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "server-only": "^0.0.1"
+    "server-only": "^0.0.1",
+    "three": "^0.186.1"
   },
   "devDependencies": {
     "@types/jsonwebtoken": "^9.0.7",
